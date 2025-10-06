@@ -9,14 +9,14 @@ const AgentNav = () => {
   const { 
     activeAgent,
     prompt,
-    projectRoot,
+    currentProject,
     contextFilePaths,
     agentFilteredFilePaths,
     openSimulatorModal
   } = useAppStore();
 
   const handleOpenSimulator = () => {
-    if (!activeAgent || !projectRoot) {
+    if (!activeAgent || !currentProject) {
       alert("Please select an agent and open a project folder before using the simulator.");
       return;
     }
@@ -29,7 +29,8 @@ const AgentNav = () => {
       prompt: prompt,
       codebase_paths: Array.from(finalContextPaths),
       output_schema: activeAgent.outputSchema,
-      project_root: projectRoot,
+      project_root: currentProject.path,
+      llm_config: activeAgent.llmConfig,
     };
 
     openSimulatorModal(payload);

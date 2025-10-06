@@ -53,7 +53,7 @@ func (s *SQLiteAgentStore) ListAgents(ctx context.Context) ([]*models.Agent, err
 	}
 	defer rows.Close()
 
-	var agents []*models.Agent
+	agents := []*models.Agent{}
 	for rows.Next() {
 		var agentData string
 		if err := rows.Scan(&agentData); err != nil {

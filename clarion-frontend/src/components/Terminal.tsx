@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 
 const Terminal = () => {
   const {
-    projectRoot,
+    currentProject,
     terminalSessions,
     activeTerminalId,
     setActiveTerminalId,
@@ -23,7 +23,7 @@ const Terminal = () => {
   const endOfHistoryRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const projectName = projectRoot?.split(/[\\/]/).pop() || '~';
+  const projectName = currentProject?.name || '~';
 
   useEffect(() => {
     endOfHistoryRef.current?.scrollIntoView({ behavior: 'auto' });

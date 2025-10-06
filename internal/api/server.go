@@ -21,15 +21,17 @@ type Server struct {
 	router         *chi.Mux
 	agentStore     storage.AgentStore
 	llmConfigStore storage.LLMConfigStore
+	projectStore   storage.ProjectStore
 }
 
-func NewServer(agentStore storage.AgentStore, llmConfigStore storage.LLMConfigStore) *Server {
+func NewServer(agentStore storage.AgentStore, llmConfigStore storage.LLMConfigStore, projectStore storage.ProjectStore) *Server {
 	r := chi.NewRouter()
 
 	s := &Server{
 		router:         r,
 		agentStore:     agentStore,
 		llmConfigStore: llmConfigStore,
+		projectStore:   projectStore,
 	}
 
 	s.setupMiddleware()
@@ -85,6 +87,12 @@ func (s *Server) setupRoutes() {
 		})
 		r.Route("/terminal", func(r chi.Router) {
 			r.Get("/ws", s.handleTerminalWS)
+		})
+		r.Route("/projects", func(r chi.Router) {
+			r.Get("/list", s.handleListProjects)
+			r.Post("/open", s.handleOpenProject)
+			r.Post("/update", s.handleUpdateProject)
+			r.Delete("/delete/{projectID}", s.handleDeleteProject)
 		})
 	})
 }

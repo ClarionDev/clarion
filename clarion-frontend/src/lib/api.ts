@@ -1,8 +1,17 @@
 import { TreeNodeData } from "../data/file-tree";
 import { AgentPersona, LLMConfig } from "../data/agent-personas";
 import { LLMProviderConfig } from "../data/llm-configs";
+import { open } from "@tauri-apps/plugin-dialog";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:2038';
+
+export interface Project {
+  id: string;
+  name: string;
+  path: string;
+  lastOpenedAt: string;
+  activeAgentId?: string;
+}
 
 export interface AgentRunRequest {
   system_instruction: string;
@@ -414,6 +423,69 @@ export const deleteLLMConfig = async (id: string): Promise<{ success: boolean; e
         return { success: true };
     } catch (error) {
         console.error("Error deleting LLM config:", error);
+        return { success: false, error: (error as Error).message };
+    }
+};
+
+export const fetchProjects = async (): Promise<Project[]> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/projects/list`);
+        if (!response.ok) throw new Error('Failed to fetch projects');
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching projects:", error);
+        return [];
+    }
+};
+
+export const openProject = async (path: string): Promise<Project | null> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/projects/open`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path }),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to open project: ${errorText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error opening project:", error);
+        return null;
+    }
+};
+
+export const updateProject = async (project: Project): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/projects/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(project),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating project:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export const deleteProject = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/projects/delete/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting project:", error);
         return { success: false, error: (error as Error).message };
     }
 };

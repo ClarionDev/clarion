@@ -1,18 +1,20 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { useAppStore } from '../store/store';
 import FileTreeExplorer from './FileTreeExplorer';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
 import Marketplace from './Marketplace';
 import CanvasEditor from './canvas/CanvasEditor';
-import { Loader } from 'lucide-react';
 import AgentPersonaManager from './AgentPersonaManager';
 import {LLMConfigManager} from './LLMConfigManager';
+import ProjectsView from './ProjectsView';
 
 const MainContent = () => {
   const { activeView } = useAppStore();
 
   const renderContent = () => {
     switch (activeView) {
+      case 'projects':
+        return <ProjectsView />;
       case 'file-tree':
         return <FileTreeExplorer />;
       case 'agent-persona':
@@ -26,7 +28,7 @@ const MainContent = () => {
       case 'marketplace':
         return <Marketplace />;
       default:
-        return <p className='p-6'>Select a view from the sidebar</p>;
+        return <ProjectsView />;
     }
   }
 

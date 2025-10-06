@@ -14,7 +14,7 @@ import FileExplorerContextMenu from "./ui/FileExplorerContextMenu";
 
 const FileTreeExplorer = () => {
   const {
-    projectRoot,
+    currentProject,
     fileTree,
     openFiles,
     activeFileId,
@@ -116,10 +116,10 @@ const FileTreeExplorer = () => {
   }, [contextMenu, clipboard, createFile, deleteNode, setClipboard, pasteNode]);
 
   const projectRootNode = useMemo((): TreeNodeData | null => {
-    if (!projectRoot) {
+    if (!currentProject) {
       return null;
     }
-    const projectName = projectRoot.split(/[\\/]/).pop() || 'Project';
+    const projectName = currentProject.name;
     return {
       id: 'project-root',
       name: projectName,
@@ -127,17 +127,17 @@ const FileTreeExplorer = () => {
       type: 'folder',
       children: fileTree,
     };
-  }, [projectRoot, fileTree]);
+  }, [currentProject, fileTree]);
 
   const activeFile = openFiles.find(file => file.id === activeFileId);
 
-  if (!projectRoot) {
+  if (!currentProject) {
       return (
           <div className="flex items-center justify-center h-full text-text-secondary">
               <div className="text-center">
                   <FolderOpen size={48} className="mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold">No Folder Open</h3>
-                  <p>Use the sidebar to open a folder and begin.</p>
+                  <h3 className="text-lg font-semibold">No Project Selected</h3>
+                  <p>Select a project from the Projects view to begin.</p>
               </div>
           </div>
       )

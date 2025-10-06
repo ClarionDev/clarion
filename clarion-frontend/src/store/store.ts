@@ -12,11 +12,15 @@ import {
     createFile as apiCreateFile,
     deleteFile as apiDeleteFile,
     copyFile as apiCopyFile,
-    writeFileContent
+    writeFileContent,
+    Project,
+    fetchProjects,
+    openProject as apiOpenProject,
 } from '../lib/api';
 import { LLMProviderConfig } from "../data/llm-configs";
+import { open } from '@tauri-apps/plugin-dialog';
 
-export type ActiveView = 'file-tree' | 'agent-persona' | 'knowledge-base' | 'marketplace' | 'canvas-editor' | 'llm-configs';
+export type ActiveView = 'projects' | 'file-tree' | 'agent-persona' | 'knowledge-base' | 'marketplace' | 'canvas-editor' | 'llm-configs';
 export type AgentStatus = 'idle' | 'running' | 'success' | 'error';
 export type AgentConfigSection = 'systemPrompt' | 'outputSchema' | 'codebase' | null;
 
@@ -72,8 +76,13 @@ export interface TerminalSession {
 interface AppState {
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
-  projectRoot: string | null;
-  setProjectRoot: (path: string | null) => void;
+  currentProject: Project | null;
+  setCurrentProject: (project: Project | null) => void;
+  openProject: (path?: string) => Promise<void>;
+
+  projects: Project[];
+  loadProjects: () => Promise<void>;
+
   fileTree: TreeNodeData[];
   setFileTree: (data: TreeNodeData[]) => void;
   refreshFileTree: () => Promise<void>;
@@ -198,32 +207,66 @@ const setupFileWatcher = (path: string | null, store: { getState: () => AppState
 };
 
 export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
-  activeView: 'file-tree',
+  activeView: 'projects',
   setActiveView: (view) => set({ activeView: view }),
-  projectRoot: null, 
-  setProjectRoot: (path) => {
-    set({ projectRoot: path, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
-    setupFileWatcher(path, { getState: get });
-    if (path) {
-      get().refreshFileTree();
+  currentProject: null,
+  projects: [],
+  loadProjects: async () => {
+    const projects = await fetchProjects();
+    set({ projects });
+  },
+  setCurrentProject: (project) => {
+    if (project) {
+        set({ currentProject: project, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
+        setupFileWatcher(project.path, { getState: get });
+        get().refreshFileTree();
+    } else {
+        set({ currentProject: null, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
+        setupFileWatcher(null, { getState: get });
     }
   },
+  openProject: async (path?: string) => {
+      let projectPath = path;
+      if (!projectPath) {
+        const selectedPath = await open({
+            directory: true,
+            multiple: false,
+        });
+        if (typeof selectedPath === 'string') {
+            projectPath = selectedPath;
+        }
+      }
+
+      if (projectPath) {
+        try {
+            const project = await apiOpenProject(projectPath);
+            if (project) {
+                get().setCurrentProject(project);
+                await get().loadProjects();
+                set({ activeView: 'file-tree' });
+            }
+        } catch (error) {
+            console.error("Failed to open project:", error);
+        }
+      }
+  },
+
   fileTree: [],
   setFileTree: (data) => set({ fileTree: data }),
   refreshFileTree: async () => {
-    const { projectRoot } = get();
-    if (projectRoot) {
-      const newTree = await fetchDirectoryTree(projectRoot);
+    const { currentProject } = get();
+    if (currentProject) {
+      const newTree = await fetchDirectoryTree(currentProject.path);
       set({ fileTree: newTree });
     }
   },
 
   refreshOpenFileContent: async (path: string) => {
-    const { projectRoot, openFiles } = get();
+    const { currentProject, openFiles } = get();
     const fileToRefresh = openFiles.find(f => f.path === path);
 
-    if (projectRoot && fileToRefresh) {
-      const fullPath = `${projectRoot}/${path}`;
+    if (currentProject && fileToRefresh) {
+      const fullPath = `${currentProject.path}/${path}`;
       const content = await fetchFileContent(fullPath);
       set(state => ({
         openFiles: state.openFiles.map(f => 
@@ -263,7 +306,7 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   openFile: async (node) => {
     if (node.type === 'folder') return;
 
-    const { openFiles, projectRoot } = get();
+    const { openFiles, currentProject } = get();
     if (openFiles.some(f => f.id === node.id)) {
       set({ activeFileId: node.id });
       return;
@@ -275,8 +318,8 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
       activeFileId: node.id
     }));
 
-    if (projectRoot) {
-        const fullPath = `${projectRoot}/${node.path}`;
+    if (currentProject) {
+        const fullPath = `${currentProject.path}/${node.path}`;
         const content = await fetchFileContent(fullPath);
         set(state => ({
             openFiles: state.openFiles.map(f => f.id === node.id ? { ...f, content } : f)
@@ -291,13 +334,13 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   })),
 
   saveActiveFile: async () => {
-    const { activeFileId, openFiles, projectRoot } = get();
-    if (!activeFileId || !projectRoot) return;
+    const { activeFileId, openFiles, currentProject } = get();
+    if (!activeFileId || !currentProject) return;
 
     const activeFile = openFiles.find(f => f.id === activeFileId);
     if (!activeFile || !activeFile.isDirty || activeFile.isDiff) return;
 
-    const result = await writeFileContent(projectRoot, activeFile.path, activeFile.content || '');
+    const result = await writeFileContent(currentProject.path, activeFile.path, activeFile.content || '');
 
     if (result.success) {
         set(state => ({
@@ -598,15 +641,15 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   })),
 
   executeTerminalCommand: async (command: string) => {
-    const { projectRoot, activeTerminalId } = get();
+    const { currentProject, activeTerminalId } = get();
 
     if (command.trim().toLowerCase() === 'clear') {
       if (activeTerminalId) get().clearTerminalHistory();
       return;
     }
 
-    if (!projectRoot || !activeTerminalId) {
-      console.error("Cannot execute command: missing projectRoot or activeTerminalId");
+    if (!currentProject || !activeTerminalId) {
+      console.error("Cannot execute command: missing currentProject or activeTerminalId");
       return;
     }
 
@@ -637,7 +680,7 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
 
     socket.onopen = () => {
       get().addCommandToSessionHistory(command);
-      socket.send(JSON.stringify({ command, project_root: projectRoot }));
+      socket.send(JSON.stringify({ command, project_root: currentProject.path }));
     };
 
     socket.onmessage = (event) => {
@@ -697,8 +740,8 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   llmProviderConfigs: [],
   setLLMProviderConfigs: (configs) => set({ llmProviderConfigs: configs }),
   loadInitialData: async () => {
-      const [agents, llmConfigs] = await Promise.all([fetchAgents(), fetchLLMConfigs()]);
-      set({ agents, llmProviderConfigs: llmConfigs });
+      const [agents, llmConfigs, projects] = await Promise.all([fetchAgents(), fetchLLMConfigs(), fetchProjects()]);
+      set({ agents, llmProviderConfigs: llmConfigs, projects });
       if (agents.length > 0 && !get().activeAgent) {
           set({ activeAgent: agents[0] });
       }
@@ -708,9 +751,9 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   setClipboard: (data) => set({ clipboard: data }),
 
   createFile: async (path: string) => {
-    const { projectRoot, refreshFileTree } = get();
-    if (!projectRoot) return;
-    const result = await apiCreateFile(projectRoot, path);
+    const { currentProject, refreshFileTree } = get();
+    if (!currentProject) return;
+    const result = await apiCreateFile(currentProject.path, path);
     if (result.success) {
         await refreshFileTree();
     } else {
@@ -719,10 +762,10 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   },
 
   deleteNode: async (node: TreeNodeData) => {
-      const { projectRoot, refreshFileTree, closeFile } = get();
-      if (!projectRoot) return;
+      const { currentProject, refreshFileTree, closeFile } = get();
+      if (!currentProject) return;
       if (node.type === 'file') {
-          const result = await apiDeleteFile(projectRoot, node.path);
+          const result = await apiDeleteFile(currentProject.path, node.path);
           if (result.success) {
               await refreshFileTree();
               closeFile(node.id);
@@ -734,13 +777,13 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   },
 
   pasteNode: async (destinationDir: string) => {
-      const { projectRoot, clipboard, refreshFileTree } = get();
-      if (!projectRoot || !clipboard) return;
+      const { currentProject, clipboard, refreshFileTree } = get();
+      if (!currentProject || !clipboard) return;
       
       const destinationPath = `${destinationDir}/${clipboard.name}`.replace(/\\/g, '/').replace(/\/\//g, '/');
 
       if (clipboard.type === 'file') {
-          const result = await apiCopyFile(projectRoot, clipboard.path, destinationPath);
+          const result = await apiCopyFile(currentProject.path, clipboard.path, destinationPath);
           if (result.success) {
               await refreshFileTree();
           } else {

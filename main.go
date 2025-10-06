@@ -36,8 +36,9 @@ func main() {
 	sqlDB := db.Handle().(*sql.DB)
 	agentStore := storage.NewSQLiteAgentStore(sqlDB)
 	llmConfigStore := storage.NewSQLiteLLMConfigStore(sqlDB)
+	projectStore := storage.NewSQLiteProjectStore(sqlDB)
 
-	server := api.NewServer(agentStore, llmConfigStore)
+	server := api.NewServer(agentStore, llmConfigStore, projectStore)
 
 	port := os.Getenv("BACKEND_PORT")
 	if port == "" {

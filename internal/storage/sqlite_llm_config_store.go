@@ -56,7 +56,7 @@ func (s *SQLiteLLMConfigStore) ListLLMConfigs(ctx context.Context) ([]*models.LL
 	}
 	defer rows.Close()
 
-	var configs []*models.LLMProviderConfig
+	configs := []*models.LLMProviderConfig{}
 	for rows.Next() {
 		var configData string
 		if err := rows.Scan(&configData); err != nil {

@@ -16,7 +16,7 @@ const PromptZone = () => {
     activeAgent,
     contextFilePaths, 
     agentFilteredFilePaths, 
-    projectRoot,
+    currentProject,
     startNewRun,
     updateRun,
     currentRunStatus,
@@ -26,7 +26,7 @@ const PromptZone = () => {
     activeAgent: state.activeAgent,
     contextFilePaths: state.contextFilePaths,
     agentFilteredFilePaths: state.agentFilteredFilePaths,
-    projectRoot: state.projectRoot,
+    currentProject: state.currentProject,
     startNewRun: state.startNewRun,
     updateRun: state.updateRun,
     currentRunStatus: state.currentRunStatus,
@@ -41,11 +41,11 @@ const PromptZone = () => {
   const finalContextPaths = useAgentFilters ? agentFilteredFilePaths : contextFilePaths;
 
   const handleRunAgent = async () => {
-    if (!activeAgent || !projectRoot || !localPrompt) return;
+    if (!activeAgent || !currentProject || !localPrompt) return;
 
     const pathsToProcess = Array.from(finalContextPaths);
     
-    const runId = startNewRun(activeAgent, localPrompt, pathsToProcess, projectRoot);
+    const runId = startNewRun(activeAgent, localPrompt, pathsToProcess, currentProject.path);
     setLocalPrompt('');
 
     try {
@@ -54,7 +54,7 @@ const PromptZone = () => {
         prompt: localPrompt,
         output_schema: activeAgent.outputSchema,
         codebase_paths: pathsToProcess,
-        project_root: projectRoot,
+        project_root: currentProject.path,
         llm_config: activeAgent.llmConfig,
       });
 

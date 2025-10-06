@@ -18,7 +18,7 @@ const getAllFilePaths = (nodes: TreeNodeData[]): string[] => {
 };
 
 function App() {
-  const { activeAgent, fileTree, projectRoot, setAgentFilteredFilePaths, loadInitialData } = useAppStore();
+  const { activeAgent, fileTree, currentProject, setAgentFilteredFilePaths, loadInitialData } = useAppStore();
 
   useEffect(() => {
     loadInitialData();
@@ -28,7 +28,7 @@ function App() {
     const updateFilteredContext = async () => {
       const hasFilters = activeAgent && (activeAgent.codebaseFilters?.includeGlobs?.length > 0 || activeAgent.codebaseFilters?.excludeGlobs?.length > 0);
       
-      if (hasFilters && projectRoot && fileTree.length > 0) {
+      if (hasFilters && currentProject && fileTree.length > 0) {
         const allFilePaths = getAllFilePaths(fileTree);
         const statuses = await fetchFilterPreview(
           allFilePaths, 
@@ -46,7 +46,7 @@ function App() {
     };
 
     updateFilteredContext();
-  }, [activeAgent, fileTree, projectRoot, setAgentFilteredFilePaths]);
+  }, [activeAgent, fileTree, currentProject, setAgentFilteredFilePaths]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-dark text-text-primary">
