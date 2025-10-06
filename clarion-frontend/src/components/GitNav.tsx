@@ -49,7 +49,7 @@ const GitNav = () => {
             </Tooltip>
           ))}
         </div>
-        <Button variant='ghost' size='sm' onClick={clearHistory} disabled={runs.length === 0}>
+        <Button variant='ghost' size='sm' onClick={clearHistory} disabled={!runs || runs.length === 0}>
             <Trash2 size={14} className='mr-2'/> Clear Chat
         </Button>
       </TooltipProvider>

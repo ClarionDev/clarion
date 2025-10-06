@@ -56,7 +56,7 @@ const ConversationHistory = () => {
 
     return (
         <div ref={scrollRef} className='flex-grow overflow-y-auto p-4'>
-            {runs.length === 0 ? (
+            {(!runs || runs.length === 0) ? (
                 <div className='flex flex-col items-center justify-center h-full text-center p-4'>
                     <Sparkles className='w-12 h-12 text-gray-light mb-4' />
                     <h3 className='font-semibold text-lg'>AI Command Center</h3>

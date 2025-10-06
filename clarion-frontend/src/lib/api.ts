@@ -2,6 +2,7 @@ import { TreeNodeData } from "../data/file-tree";
 import { AgentPersona, LLMConfig } from "../data/agent-personas";
 import { LLMProviderConfig } from "../data/llm-configs";
 import { open } from "@tauri-apps/plugin-dialog";
+import { AgentRun } from "../store/store";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:2038';
 
@@ -486,6 +487,35 @@ export const deleteProject = async (id: string): Promise<{ success: boolean; err
         return { success: true };
     } catch (error) {
         console.error("Error deleting project:", error);
+        return { success: false, error: (error as Error).message };
+    }
+};
+
+export const fetchRunsForProject = async (projectId: string): Promise<AgentRun[]> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/projects/${projectId}/runs`);
+        if (!response.ok) throw new Error('Failed to fetch runs for project');
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching runs:", error);
+        return [];
+    }
+};
+
+export const saveRun = async (projectId: string, run: AgentRun): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/runs/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_id: projectId, run }),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Error saving run:", error);
         return { success: false, error: (error as Error).message };
     }
 };

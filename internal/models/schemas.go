@@ -70,3 +70,9 @@ type Project struct {
 	LastOpenedAt string `json:"lastOpenedAt" yaml:"lastOpenedAt"`
 	ActiveAgentID string `json:"activeAgentId" yaml:"activeAgentId"`
 }
+
+type Run struct {
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	RunData   string `json:"run_data"`
+}

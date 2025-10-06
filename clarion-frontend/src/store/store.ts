@@ -17,6 +17,8 @@ import {
     fetchProjects,
     openProject as apiOpenProject,
     updateProject,
+    fetchRunsForProject,
+    saveRun,
 } from '../lib/api';
 import { LLMProviderConfig } from "../data/llm-configs";
 import { open } from '@tauri-apps/plugin-dialog';
@@ -103,6 +105,7 @@ interface AppState {
   closeFile: (id: string) => void;
 
   runs: AgentRun[];
+  loadRunsForProject: (projectId: string) => Promise<void>;
   selectedRunId: string | null;
   currentRunStatus: AgentStatus;
   prompt: string;
@@ -169,10 +172,11 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   },
   setCurrentProject: (project) => {
     if (project) {
-        set({ currentProject: project, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
+        set({ currentProject: project, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set(), runs: [] });
         get().refreshFileTree();
+        get().loadRunsForProject(project.id);
     } else {
-        set({ currentProject: null, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
+        set({ currentProject: null, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set(), runs: [] });
     }
   },
   openProject: async (path?: string) => {
@@ -344,6 +348,10 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   }),
 
   runs: [],
+  loadRunsForProject: async (projectId: string) => {
+    const runs = await fetchRunsForProject(projectId);
+    set({ runs });
+  },
   selectedRunId: null,
   currentRunStatus: 'idle',
   prompt: '',
@@ -396,9 +404,17 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
     });
 
     const newState: Partial<Pick<AppState, 'runs' | 'currentRunStatus' | 'selectedFileChanges'>> = { runs: newRuns };
+    const updatedRun = newRuns.find(run => run.id === id);
     
-    if (state.selectedRunId === id && state.currentRunStatus === 'running' && data.status && data.status !== 'running') {
+    if (state.currentRunStatus === 'running' && data.status && data.status !== 'running') {
         newState.currentRunStatus = 'idle';
+        if (state.currentProject && updatedRun) {
+            saveRun(state.currentProject.id, updatedRun).then(result => {
+                if (!result.success) {
+                    console.error("Failed to save run:", result.error);
+                }
+            });
+        }
     }
 
     if (data.status === 'success' && data.output?.fileChanges) {
@@ -441,6 +457,13 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
             const allFilePaths = new Set(newRun.output.fileChanges.map(fc => fc.path));
             newSelectedChanges.set(newRunId, allFilePaths);
             newState.selectedFileChanges = newSelectedChanges;
+        }
+        if (state.currentProject) {
+            saveRun(state.currentProject.id, newRun).then(result => {
+                if (!result.success) {
+                    console.error("Failed to save simulated run:", result.error);
+                }
+            });
         }
         return newState;
     });
