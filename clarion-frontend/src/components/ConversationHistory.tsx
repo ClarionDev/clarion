@@ -64,7 +64,7 @@ const ConversationHistory = () => {
                 </div>
             ) : (
                 <div className='space-y-8'>
-                    {[...runs].reverse().map(run => (
+                    {[...runs].map(run => (
                         <React.Fragment key={run.id}>
                             {/* User's Prompt */}
                             <div className='flex items-start gap-4'>

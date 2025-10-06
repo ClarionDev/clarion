@@ -4,6 +4,7 @@ import { useAppStore } from '../store/store';
 import Button from './ui/Button';
 import { Beaker } from 'lucide-react';
 import { AgentRunRequest } from '../lib/api';
+import LLMSelector from './LLMSelector';
 
 const AgentNav = () => {
   const { 
@@ -40,6 +41,8 @@ const AgentNav = () => {
     <div className="flex-shrink-0 px-4 py-2 border-b border-gray-light bg-gray-medium flex items-center justify-between">
       <div className='flex items-center gap-4'>
         <AgentSwitcher />
+        <div className='w-px h-6 bg-gray-light/50' />
+        <LLMSelector />
         <div className='w-px h-6 bg-gray-light/50' />
         <AgentConfigBar />
       </div>
