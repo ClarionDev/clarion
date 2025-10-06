@@ -200,8 +200,13 @@ export const runAgent = async (request: AgentRunRequest): Promise<AgentOutput> =
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Agent run failed with non-JSON response' }));
-            throw new Error(errorData.error || `Agent run failed: ${response.statusText}`);
+            const errorText = await response.text();
+            try {
+                const errorJson = JSON.parse(errorText);
+                throw new Error(errorJson.error || `Agent run failed with status: ${response.status}`);
+            } catch (e) {
+                throw new Error(`Agent run failed: ${errorText}`);
+            }
         }
 
         const data = await response.json();

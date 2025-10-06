@@ -97,6 +97,7 @@ func (o *OpenRouterProvider) Generate(ctx context.Context, messages []ChatMessag
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("OpenRouter API returned non-OK status %d. Response body: %s", resp.StatusCode, string(bodyBytes))
 		var errResp struct {
 			Error struct {
 				Message string `json:"message"`
@@ -110,6 +111,7 @@ func (o *OpenRouterProvider) Generate(ctx context.Context, messages []ChatMessag
 
 	var apiResp ChatCompletionResponse
 	if err := json.Unmarshal(bodyBytes, &apiResp); err != nil {
+		log.Printf("Failed to unmarshal OpenRouter response. Body: %s", string(bodyBytes))
 		return nil, fmt.Errorf("failed to unmarshal OpenRouter response: %w. Body: %s", err, string(bodyBytes))
 	}
 
@@ -117,6 +119,7 @@ func (o *OpenRouterProvider) Generate(ctx context.Context, messages []ChatMessag
 		return nil, fmt.Errorf("OpenRouter API returned an error: %v", apiResp.Error.Message)
 	}
 	if len(apiResp.Choices) == 0 {
+		log.Printf("Invalid response from OpenRouter: choices array is empty. Body: %s", string(bodyBytes))
 		return nil, errors.New("invalid response from OpenRouter: choices array is empty")
 	}
 
