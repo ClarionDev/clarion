@@ -23,7 +23,7 @@ type Server struct {
 	llmConfigStore storage.LLMConfigStore
 }
 
-func NewServer(agentStore storage.AgentStore, llmConfigStore storage.LLMConfigStore, devFrontendURL string) *Server {
+func NewServer(agentStore storage.AgentStore, llmConfigStore storage.LLMConfigStore) *Server {
 	r := chi.NewRouter()
 
 	s := &Server{
@@ -32,20 +32,20 @@ func NewServer(agentStore storage.AgentStore, llmConfigStore storage.LLMConfigSt
 		llmConfigStore: llmConfigStore,
 	}
 
-	s.setupMiddleware(devFrontendURL)
+	s.setupMiddleware()
 	s.setupRoutes()
 
 	return s
 }
 
-func (s *Server) setupMiddleware(devFrontendURL string) {
+func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
 
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   []string{devFrontendURL, "tauri://localhost"},
+		AllowedOrigins:   []string{"http://localhost:*", "tauri://localhost"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},

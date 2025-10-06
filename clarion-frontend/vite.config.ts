@@ -1,36 +1,41 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
 // https://vite.dev/config/
-export default defineConfig(async () => ({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  // Load env file from the parent directory (project root)
+  const env = loadEnv(mode, path.resolve(__dirname, '..'), '');
 
-  // This section is CRITICAL for Tauri v2 and prevents Vite from
-  // trying to pre-bundle the "@tauri-apps/api" package.
-  optimizeDeps: {
-    exclude: ["@tauri-apps/api"],
-  },
+  return {
+    plugins: [react()],
 
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    // This section is CRITICAL for Tauri v2 and prevents Vite from
+    // trying to pre-bundle the "@tauri-apps/api" package.
+    optimizeDeps: {
+      exclude: ["@tauri-apps/api"],
     },
-  },
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  clearScreen: false,
-  server: {
-    port: Number(process.env.VITE_FRONTEND_PORT) || 1420,
-    strictPort: true,
-    hmr: {
-      protocol: "ws",
-      host: "localhost",
-      port: Number(process.env.VITE_HMR_PORT) || 1421,
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-    watch: {
-      // tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+
+    // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
+    clearScreen: false,
+    server: {
+      port: Number(env.VITE_FRONTEND_PORT) || 1420,
+      strictPort: true,
+      hmr: {
+        protocol: "ws",
+        host: "localhost",
+        port: Number(env.VITE_HMR_PORT) || 1421,
+      },
+      watch: {
+        // tell Vite to ignore watching `src-tauri`
+        ignored: ["**/src-tauri/**"],
+      },
     },
-  },
-}));
+  };
+});

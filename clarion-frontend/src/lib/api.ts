@@ -2,7 +2,7 @@ import { TreeNodeData } from "../data/file-tree";
 import { AgentPersona, LLMConfig } from "../data/agent-personas";
 import { LLMProviderConfig } from "../data/llm-configs";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:2077';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:2038';
 
 export interface AgentRunRequest {
   system_instruction: string;

@@ -37,13 +37,7 @@ func main() {
 	agentStore := storage.NewSQLiteAgentStore(sqlDB)
 	llmConfigStore := storage.NewSQLiteLLMConfigStore(sqlDB)
 
-	frontendPort := os.Getenv("VITE_FRONTEND_PORT")
-	if frontendPort == "" {
-		frontendPort = "1420"
-	}
-	frontendURL := fmt.Sprintf("http://localhost:%s", frontendPort)
-
-	server := api.NewServer(agentStore, llmConfigStore, frontendURL)
+	server := api.NewServer(agentStore, llmConfigStore)
 
 	port := os.Getenv("BACKEND_PORT")
 	if port == "" {
