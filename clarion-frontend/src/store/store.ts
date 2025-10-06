@@ -25,7 +25,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 
 export type ActiveView = 'projects' | 'file-tree' | 'agent-persona' | 'knowledge-base' | 'marketplace' | 'canvas-editor' | 'llm-configs';
 export type AgentStatus = 'idle' | 'running' | 'success' | 'error';
-export type AgentConfigSection = 'systemPrompt' | 'outputSchema' | 'codebase' | null;
+export type AgentConfigSection = 'systemPrompt' | 'outputSchema' | 'codebase' | 'llmSettings' | null;
 
 export interface OpenFile extends TreeNodeData {
     isDiff?: boolean;
