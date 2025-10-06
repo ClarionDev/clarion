@@ -11,20 +11,25 @@ import (
 
 	"github.com/ClarionDev/clarion/internal/codebase"
 	"github.com/ClarionDev/clarion/internal/fs"
+	"github.com/ClarionDev/clarion/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
 type Server struct {
-	router *chi.Mux
+	router         *chi.Mux
+	agentStore     storage.AgentStore
+	llmConfigStore storage.LLMConfigStore
 }
 
-func NewServer() *Server {
+func NewServer(agentStore storage.AgentStore, llmConfigStore storage.LLMConfigStore) *Server {
 	r := chi.NewRouter()
 
 	s := &Server{
-		router: r,
+		router:         r,
+		agentStore:     agentStore,
+		llmConfigStore: llmConfigStore,
 	}
 
 	s.setupMiddleware()

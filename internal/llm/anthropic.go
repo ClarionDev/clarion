@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/ClarionDev/clarion/internal/models"
+	"github.com/ClarionDev/clarion/internal/storage"
 )
 
 func init() {
@@ -16,7 +17,7 @@ func init() {
 type AnthropicProvider struct{}
 
 // Generate sends a request to the Anthropic API and returns the structured output.
-func (p *AnthropicProvider) Generate(ctx context.Context, messages []ChatMessage, request models.AgentRunRequest) (map[string]any, error) {
+func (p *AnthropicProvider) Generate(ctx context.Context, messages []ChatMessage, request models.AgentRunRequest, llmConfigStore storage.LLMConfigStore) (map[string]any, error) {
 	log.Printf("AnthropicProvider selected, but it is not fully implemented yet.")
 	return nil, fmt.Errorf("provider 'Anthropic' is not yet implemented")
 }

@@ -140,19 +140,14 @@ func SetRequestHeaders(req *http.Request, apiKey string) {
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 }
 
-func (o *OpenAIProvider) Generate(ctx context.Context, messages []ChatMessage, request models.AgentRunRequest) (map[string]any, error) {
+func (o *OpenAIProvider) Generate(ctx context.Context, messages []ChatMessage, request models.AgentRunRequest, llmConfigStore storage.LLMConfigStore) (map[string]any, error) {
 	url := "https://api.openai.com/v1/responses"
 
 	if request.LLMConfig.ConfigID == "" {
 		return nil, errors.New("agent's LLM configuration is missing a Config ID")
 	}
 
-	store, err := storage.NewFileStore("./test_storage")
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize storage: %w", err)
-	}
-
-	llmConfig, err := store.LoadLLMConfig(request.LLMConfig.ConfigID)
+	llmConfig, err := llmConfigStore.GetLLMConfig(ctx, request.LLMConfig.ConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load LLM config '%s': %w", request.LLMConfig.ConfigID, err)
 	}

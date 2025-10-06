@@ -17,7 +17,7 @@ type DB interface {
 func New(ctx context.Context, driver, connString string) (DB, error) {
 	switch driver {
 	case "sqlite":
-		migrationsDir := "db/migrations"
+		migrationsDir := "./db/migrations"
 		return NewSQLite(ctx, connString, migrationsDir)
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s", driver)

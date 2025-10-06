@@ -10,11 +10,8 @@ import (
 
 	"github.com/ClarionDev/clarion/internal/llm"
 	"github.com/ClarionDev/clarion/internal/models"
-	"github.com/ClarionDev/clarion/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
-
-const storagePath = "./test_storage"
 
 func (s *Server) handleAgentRun(w http.ResponseWriter, r *http.Request) {
 	var apiReq AgentRunRequest
@@ -50,7 +47,7 @@ func (s *Server) handleAgentRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := provider.Generate(r.Context(), messages, internalReq)
+	output, err := provider.Generate(r.Context(), messages, internalReq, s.llmConfigStore)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("LLM generation failed: %v", err), http.StatusInternalServerError)
 		return
@@ -138,13 +135,7 @@ func (s *Server) handleSaveAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := storage.NewFileStore(storagePath)
-	if err != nil {
-		http.Error(w, "Failed to initialize storage", http.StatusInternalServerError)
-		return
-	}
-
-	if err := store.SaveAgent(&agentToSave); err != nil {
+	if err := s.agentStore.SaveAgent(r.Context(), &agentToSave); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to save agent: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -154,26 +145,10 @@ func (s *Server) handleSaveAgent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListAgents(w http.ResponseWriter, r *http.Request) {
-	store, err := storage.NewFileStore(storagePath)
-	if err != nil {
-		http.Error(w, "Failed to initialize storage", http.StatusInternalServerError)
-		return
-	}
-
-	agentIDs, err := store.ListAgents()
+	agents, err := s.agentStore.ListAgents(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to list agents", http.StatusInternalServerError)
 		return
-	}
-
-	var agents []models.Agent
-	for _, id := range agentIDs {
-		agent, err := store.LoadAgent(id)
-		if err != nil {
-			log.Printf("Warning: could not load agent '%s': %v", id, err)
-			continue
-		}
-		agents = append(agents, *agent)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -190,13 +165,7 @@ func (s *Server) handleDeleteAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := storage.NewFileStore(storagePath)
-	if err != nil {
-		http.Error(w, "Failed to initialize storage", http.StatusInternalServerError)
-		return
-	}
-
-	if err := store.DeleteAgent(agentID); err != nil {
+	if err := s.agentStore.DeleteAgent(r.Context(), agentID); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to delete agent: %v", err), http.StatusInternalServerError)
 		return
 	}

@@ -7,31 +7,14 @@ import (
 	"net/http"
 
 	"github.com/ClarionDev/clarion/internal/models"
-	"github.com/ClarionDev/clarion/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 
 func (s *Server) handleListLLMConfigs(w http.ResponseWriter, r *http.Request) {
-	store, err := storage.NewFileStore(storagePath)
-	if err != nil {
-		http.Error(w, "Failed to initialize storage", http.StatusInternalServerError)
-		return
-	}
-
-	configIDs, err := store.ListLLMConfigs()
+	configs, err := s.llmConfigStore.ListLLMConfigs(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to list LLM configs", http.StatusInternalServerError)
 		return
-	}
-
-	var configs []models.LLMProviderConfig
-	for _, id := range configIDs {
-		config, err := store.LoadLLMConfig(id)
-		if err != nil {
-			log.Printf("Warning: could not load LLM config '%s': %v", id, err)
-			continue
-		}
-		configs = append(configs, *config)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -48,13 +31,7 @@ func (s *Server) handleSaveLLMConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := storage.NewFileStore(storagePath)
-	if err != nil {
-		http.Error(w, "Failed to initialize storage", http.StatusInternalServerError)
-		return
-	}
-
-	if err := store.SaveLLMConfig(&configToSave); err != nil {
+	if err := s.llmConfigStore.SaveLLMConfig(r.Context(), &configToSave); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to save LLM config: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -70,13 +47,7 @@ func (s *Server) handleDeleteLLMConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := storage.NewFileStore(storagePath)
-	if err != nil {
-		http.Error(w, "Failed to initialize storage", http.StatusInternalServerError)
-		return
-	}
-
-	if err := store.DeleteLLMConfig(configID); err != nil {
+	if err := s.llmConfigStore.DeleteLLMConfig(r.Context(), configID); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to delete LLM config: %v", err), http.StatusInternalServerError)
 		return
 	}

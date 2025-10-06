@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/georgysavva/scany/sqlscan"
+	"github.com/georgysavva/scany/v2/sqlscan"
 	_ "modernc.org/sqlite"
 )
 
@@ -32,7 +32,7 @@ func NewSQLite(ctx context.Context, connString, migrationsDir string) (*SQLiteDa
 	}
 
 	dir := filepath.Dir(connString)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) && dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create database directory: %w", err)
 		}
@@ -69,54 +69,29 @@ func (db *SQLiteDatabase) RunMigrations(ctx context.Context) error {
 
 	var migrationFiles []string
 	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".sqlite.sql") {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".sql") {
 			migrationFiles = append(migrationFiles, file.Name())
 		}
 	}
 	sort.Strings(migrationFiles)
 
-	var allMigrations strings.Builder
+	tx, err := db.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin migration transaction: %w", err)
+	}
+	defer tx.Rollback() // Rollback is a no-op if Commit succeeds
+
 	for _, fileName := range migrationFiles {
 		filePath := filepath.Join(db.migrationsDir, fileName)
 		sqlBytes, err := os.ReadFile(filePath)
 		if err != nil {
 			return fmt.Errorf("failed to read migration file %s: %w", filePath, err)
 		}
-		allMigrations.Write(sqlBytes)
-		allMigrations.WriteString(";\n")
-	}
 
-	if _, err = db.db.ExecContext(ctx, allMigrations.String()); err != nil {
-		return fmt.Errorf("failed to run sqlite migrations: %w", err)
-	}
-	return nil
-}
-
-func SQLiteExec(ctx context.Context, db SQLiteDBTX, sql string, args ...any) error {
-	_, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		return fmt.Errorf("db.ExecContext failed: %w", err)
-	}
-	return nil
-}
-
-func SQLiteQueryRow[T any](ctx context.Context, db SQLiteDBTX, sql string, args ...any) (T, error) {
-	var entity T
-	err := sqlscan.Get(ctx, db, &entity, sql, args...)
-	if err != nil {
-		if sqlscan.NotFound(err) {
-			return entity, ErrNotFound
+		if _, err = tx.ExecContext(ctx, string(sqlBytes)); err != nil {
+			return fmt.Errorf("failed to run migration %s: %w", fileName, err)
 		}
-		return entity, fmt.Errorf("sqlscan.Get failed: %w", err)
 	}
-	return entity, nil
-}
 
-func SQLiteQuery[T any](ctx context.Context, db SQLiteDBTX, sql string, args ...any) ([]T, error) {
-	var entities []T
-	err := sqlscan.Select(ctx, db, &entities, sql, args...)
-	if err != nil {
-		return nil, fmt.Errorf("sqlscan.Select failed: %w", err)
-	}
-	return entities, nil
+	return tx.Commit()
 }

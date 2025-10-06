@@ -5,6 +5,8 @@ clarion.exe
 # Local storage for configs and agents
 test_storage/
 markdown/
+clarion.db
+clarion.db-journal
 # OS-specific files
 .DS_Store
 Thumbs.db
