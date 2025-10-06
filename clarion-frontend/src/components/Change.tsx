@@ -19,9 +19,11 @@ const Change = ({ run }: ChangeProps) => {
     toggleFileChangeSelection,
     toggleAllFileChangeSelections,
     markChangesAsApplied,
-    projectRoot,
+    currentProject,
     refreshFileTree,
   } = useAppStore();
+
+  const projectRoot = currentProject?.path;
 
   const [isLoading, setIsLoading] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
