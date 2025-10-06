@@ -16,6 +16,7 @@ import {
     Project,
     fetchProjects,
     openProject as apiOpenProject,
+    updateProject,
 } from '../lib/api';
 import { LLMProviderConfig } from "../data/llm-configs";
 import { open } from '@tauri-apps/plugin-dialog';
@@ -29,8 +30,6 @@ export interface OpenFile extends TreeNodeData {
     originalContent?: string;
     isDirty?: boolean;
 }
-
-let fileWatcherSocket: WebSocket | null = null;
 
 const getAllFilePaths = (node: TreeNodeData): string[] => {
   if (node.type === 'file') {
@@ -124,7 +123,7 @@ interface AppState {
   agents: AgentPersona[];
   setAgents: (agents: AgentPersona[]) => void;
   activeAgent: AgentPersona | null;
-  setActiveAgent: (agent: AgentPersona | null) => void;
+  setActiveAgent: (agent: AgentPersona | null, fromInitialLoad?: boolean) => void;
   agentStateForEdit: AgentPersona | null;
   setAgentStateForEdit: (agent: AgentPersona | null) => void;
   initializeAgentForEdit: () => void;
@@ -159,53 +158,6 @@ interface AppState {
 const initialSessionId = `terminal-${Date.now()}`;
 const terminalSockets = new Map<string, WebSocket>();
 
-const setupFileWatcher = (path: string | null, store: { getState: () => AppState }) => {
-  if (fileWatcherSocket) {
-    fileWatcherSocket.close();
-    fileWatcherSocket = null;
-  }
-
-  if (!path) {
-    return;
-  }
-
-  fileWatcherSocket = new WebSocket('ws://localhost:2077/api/v2/fs/watch');
-
-  fileWatcherSocket.onopen = () => {
-    console.log('File watcher connection established.');
-    fileWatcherSocket?.send(JSON.stringify({ path }));
-  };
-
-  fileWatcherSocket.onmessage = (event) => {
-    try {
-        const data = JSON.parse(event.data);
-        if (data.event === 'change') {
-            console.log(`File change detected: ${data.path}, op: ${data.op}`);
-            const { getState } = store;
-            const state = getState();
-            
-            state.refreshFileTree();
-
-            const changedFileIsOpen = state.openFiles.some(file => file.path === data.path);
-            if (changedFileIsOpen && data.op !== 'REMOVE') {
-              state.refreshOpenFileContent(data.path);
-            }
-        }
-    } catch (e) {
-        console.error("Error parsing file watcher message:", e);
-    }
-  };
-
-  fileWatcherSocket.onerror = (error) => {
-    console.error('File watcher WebSocket error:', error);
-  };
-
-  fileWatcherSocket.onclose = () => {
-    console.log('File watcher connection closed.');
-    fileWatcherSocket = null;
-  };
-};
-
 export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   activeView: 'projects',
   setActiveView: (view) => set({ activeView: view }),
@@ -218,11 +170,9 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   setCurrentProject: (project) => {
     if (project) {
         set({ currentProject: project, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
-        setupFileWatcher(project.path, { getState: get });
         get().refreshFileTree();
     } else {
         set({ currentProject: null, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set() });
-        setupFileWatcher(null, { getState: get });
     }
   },
   openProject: async (path?: string) => {
@@ -547,7 +497,31 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   agents: [],
   setAgents: (agents) => set({ agents }),
   activeAgent: null, 
-  setActiveAgent: (agent) => set({ activeAgent: agent }),
+  setActiveAgent: (agent, fromInitialLoad = false) => {
+    const { activeAgent: currentActiveAgent, currentProject, loadProjects } = get();
+
+    if (agent?.id === currentActiveAgent?.id) {
+        return;
+    }
+    
+    set({ activeAgent: agent });
+
+    if (fromInitialLoad) {
+        return;
+    }
+
+    if (currentProject && agent) {
+        const updatedProject = { ...currentProject, activeAgentId: agent.id };
+        
+        updateProject(updatedProject).then(result => {
+            if (result.success) {
+                loadProjects(); 
+            } else {
+                console.error("Failed to update project's active agent:", result.error);
+            }
+        });
+    }
+  },
   agentStateForEdit: null,
   setAgentStateForEdit: (agent) => set({ agentStateForEdit: agent }),
   initializeAgentForEdit: () => {
@@ -675,7 +649,7 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
       ),
     }));
 
-    const socket = new WebSocket('ws://localhost:2077/api/v2/terminal/ws');
+    const socket = new WebSocket('ws://localhost:2038/api/v2/terminal/ws');
     terminalSockets.set(activeTerminalId, socket);
 
     socket.onopen = () => {
@@ -740,10 +714,35 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   llmProviderConfigs: [],
   setLLMProviderConfigs: (configs) => set({ llmProviderConfigs: configs }),
   loadInitialData: async () => {
+      const { setCurrentProject, setActiveAgent } = get();
       const [agents, llmConfigs, projects] = await Promise.all([fetchAgents(), fetchLLMConfigs(), fetchProjects()]);
+      
       set({ agents, llmProviderConfigs: llmConfigs, projects });
-      if (agents.length > 0 && !get().activeAgent) {
-          set({ activeAgent: agents[0] });
+  
+      if (projects.length > 0) {
+          const latestProject = projects[0]; // Backend sorts by last updated/opened
+          
+          setCurrentProject(latestProject);
+          
+          let agentToSet: AgentPersona | null = null;
+          if (latestProject.activeAgentId) {
+              agentToSet = agents.find(a => a.id === latestProject.activeAgentId) || null;
+          }
+  
+          // Fallback to first agent if no active agent set for project or if agent was deleted
+          if (!agentToSet && agents.length > 0) {
+              agentToSet = agents[0];
+          }
+          
+          if (agentToSet) {
+              setActiveAgent(agentToSet, true); // Use flag to prevent redundant API call
+          }
+          
+          set({ activeView: 'file-tree' });
+  
+      } else if (agents.length > 0 && !get().activeAgent) {
+          // Fallback for when there are no projects yet, just set a default agent
+          setActiveAgent(agents[0], true);
       }
   },
 

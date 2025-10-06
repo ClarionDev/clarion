@@ -25,6 +25,51 @@ function App() {
   }, [loadInitialData]);
 
   useEffect(() => {
+    if (!currentProject?.path) {
+        return;
+    }
+
+    const socket = new WebSocket('ws://localhost:2038/api/v2/fs/watch');
+
+    socket.onopen = () => {
+        console.log('File watcher connection established.');
+        socket.send(JSON.stringify({ path: currentProject.path }));
+    };
+
+    socket.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.event === 'change') {
+                console.log(`File change detected: ${data.path}, op: ${data.op}`);
+                
+                const { refreshFileTree, openFiles, refreshOpenFileContent } = useAppStore.getState();
+                
+                refreshFileTree();
+
+                const changedFileIsOpen = openFiles.some(file => file.path === data.path);
+                if (changedFileIsOpen && data.op !== 'REMOVE') {
+                    refreshOpenFileContent(data.path);
+                }
+            }
+        } catch (e) {
+            console.error("Error parsing file watcher message:", e);
+        }
+    };
+
+    socket.onerror = (error) => {
+        console.error('File watcher WebSocket error:', error);
+    };
+
+    socket.onclose = () => {
+        console.log('File watcher connection closed.');
+    };
+
+    return () => {
+        socket.close();
+    };
+  }, [currentProject?.path]);
+
+  useEffect(() => {
     const updateFilteredContext = async () => {
       const hasFilters = activeAgent && (activeAgent.codebaseFilters?.includeGlobs?.length > 0 || activeAgent.codebaseFilters?.excludeGlobs?.length > 0);
       
