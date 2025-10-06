@@ -21,12 +21,12 @@ export default defineConfig(async () => ({
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   clearScreen: false,
   server: {
-    port: 1420,
+    port: Number(process.env.VITE_FRONTEND_PORT) || 1420,
     strictPort: true,
     hmr: {
       protocol: "ws",
       host: "localhost",
-      port: 1421,
+      port: Number(process.env.VITE_HMR_PORT) || 1421,
     },
     watch: {
       // tell Vite to ignore watching `src-tauri`

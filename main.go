@@ -4,16 +4,22 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/ClarionDev/clarion/internal/api"
 	"github.com/ClarionDev/clarion/internal/database"
 	"github.com/ClarionDev/clarion/internal/llm"
 	"github.com/ClarionDev/clarion/internal/storage"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Initialize the LLM Provider Registry at startup
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using default or environment-set variables.")
+	}
+
 	llm.RegisterProviders()
 
 	ctx := context.Background()
@@ -31,8 +37,19 @@ func main() {
 	agentStore := storage.NewSQLiteAgentStore(sqlDB)
 	llmConfigStore := storage.NewSQLiteLLMConfigStore(sqlDB)
 
-	server := api.NewServer(agentStore, llmConfigStore)
-	addr := ":2077"
+	frontendPort := os.Getenv("VITE_FRONTEND_PORT")
+	if frontendPort == "" {
+		frontendPort = "1420"
+	}
+	frontendURL := fmt.Sprintf("http://localhost:%s", frontendPort)
+
+	server := api.NewServer(agentStore, llmConfigStore, frontendURL)
+
+	port := os.Getenv("BACKEND_PORT")
+	if port == "" {
+		port = "2077"
+	}
+	addr := fmt.Sprintf(":%s", port)
 
 	log.Printf("Starting server on %s", addr)
 	if err := server.Start(addr); err != nil {

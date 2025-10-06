@@ -137,10 +137,20 @@ make dev
 
 This command will:
 
-1.  Compile and run the Go backend server (listening on `http://localhost:2077`).
+1.  Compile and run the Go backend server (listening on `http://localhost:2077` by default).
 2.  Start the React development server in a Tauri window, providing the desktop application UI.
 
 The application should automatically open in a new window.
+
+### Configuration
+
+You can customize the ports for the backend and frontend servers by creating a `.env` file in the root of the project. Copy the `.env.example` file to get started:
+
+```bash
+cp .env.example .env
+```
+
+Then, edit the `.env` file with your desired port numbers. The frontend will automatically connect to the backend URL specified in `VITE_API_URL`.
 
 ## 🙌 Contributing
 

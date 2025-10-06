@@ -1,3 +1,9 @@
+# Export variables from .env to be available in sub-shells
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 serve:
 	@echo "Starting API server..."
 	@go run main.go &
