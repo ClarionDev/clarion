@@ -1,4 +1,4 @@
-export const LLM_PROVIDERS = ['OpenAI', 'Anthropic', 'Google Gemini'] as const;
+export const LLM_PROVIDERS = ['OpenAI', 'Anthropic', 'Google Gemini', 'OpenRouter'] as const;
 export type LLMProvider = typeof LLM_PROVIDERS[number];
 
 export interface LLMProviderConfig {
