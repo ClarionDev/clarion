@@ -56,32 +56,6 @@ type ChatCompletionResponse struct {
 	} `json:"error,omitempty"`
 }
 
-func enforceSchemaCompliance(schema map[string]any) {
-	if t, ok := schema["type"].(string); ok && t == "object" {
-		schema["additionalProperties"] = false
-
-		if properties, ok := schema["properties"].(map[string]any); ok {
-			requiredKeys := make([]string, 0, len(properties))
-			for key := range properties {
-				requiredKeys = append(requiredKeys, key)
-			}
-			schema["required"] = requiredKeys
-		}
-	}
-
-	if properties, ok := schema["properties"].(map[string]any); ok {
-		for _, propSchema := range properties {
-			if subSchema, ok := propSchema.(map[string]any); ok {
-				enforceSchemaCompliance(subSchema)
-			}
-		}
-	}
-
-	if items, ok := schema["items"].(map[string]any); ok {
-		enforceSchemaCompliance(items)
-	}
-}
-
 func (o *OpenRouterProvider) Generate(ctx context.Context, messages []ChatMessage, request models.AgentRunRequest, llmConfigStore storage.LLMConfigStore) (map[string]any, error) {
 	if request.LLMConfig.ConfigID == "" {
 		return nil, errors.New("API key for OpenRouter is not configured (missing Config ID)")
