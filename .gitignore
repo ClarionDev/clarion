@@ -1,0 +1,11 @@
+# Go build artifacts
+clarion
+clarion.exe
+
+# Local storage for configs and agents
+test_storage/
+markdown/
+# OS-specific files
+.DS_Store
+Thumbs.db
+.env*
