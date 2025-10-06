@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '../store/store';
 import Button from './ui/Button';
 import Textarea from './ui/Textarea';
-import AgentSwitcher from './AgentSwitcher';
 import { Sparkles, Files } from 'lucide-react';
 import { runAgent as runAgentApi, AgentOutput as ApiAgentOutput } from '../lib/api';
 import { useDebounce } from '../hooks/useDebounce';
@@ -87,8 +86,7 @@ const PromptZone = () => {
 
   return (
     <div className="p-4 border-t border-gray-light flex-shrink-0 flex flex-col gap-3">
-      <div className='flex justify-between items-center text-xs text-text-secondary'>
-        <AgentSwitcher />
+      <div className='flex justify-end items-center text-xs text-text-secondary'>
         <button 
           onClick={() => setActiveConfigSection('codebase')} 
           className='flex items-center gap-2 hover:text-text-primary'
