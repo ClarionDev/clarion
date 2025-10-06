@@ -123,7 +123,7 @@ func SeedData(ctx context.Context, agentStore storage.AgentStore, llmStore stora
 	demoProject := &models.Project{
 		ID:            "seed_project_demo",
 		Name:          "Demo Project",
-		Path:          "/path/to/your/demo/project",
+		Path:          "",
 		LastOpenedAt:  time.Now().UTC().Format(time.RFC3339),
 		ActiveAgentID: basicAgent.Profile.ID,
 	}

@@ -173,7 +173,9 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   setCurrentProject: (project) => {
     if (project) {
         set({ currentProject: project, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set(), runs: [] });
-        get().refreshFileTree();
+        if (project.path) {
+          get().refreshFileTree();
+        }
         get().loadRunsForProject(project.id);
     } else {
         set({ currentProject: null, fileTree: [], openFiles: [], activeFileId: null, contextFilePaths: new Set(), runs: [] });

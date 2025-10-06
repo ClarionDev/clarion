@@ -70,7 +70,7 @@ func (s *Server) handleListRuns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var runDataList []json.RawMessage
+	runDataList := make([]json.RawMessage, 0)
 	for _, run := range runs {
 		runDataList = append(runDataList, []byte(run.RunData))
 	}
