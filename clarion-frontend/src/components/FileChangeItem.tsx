@@ -6,14 +6,14 @@ import FileIcon from './FileIcon';
 import { useAppStore } from '../store/store';
 
 const getActionPill = (action: FileChange['action']) => {
-    const baseClasses = 'text-xs font-bold px-2 py-0.5 rounded-full border';
+    const baseClasses = 'text-xs font-semibold px-1.5 py-0.5 rounded';
     switch (action) {
         case 'create':
-            return <span className={cn(baseClasses, 'bg-green-500/10 text-green-400 border-green-500/30')}>CREATE</span>;
+            return <span className={cn(baseClasses, 'bg-green-500/10 text-green-400')}>CREATE</span>;
         case 'modify':
-            return <span className={cn(baseClasses, 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30')}>MODIFY</span>;
+            return <span className={cn(baseClasses, 'bg-yellow-500/10 text-yellow-400')}>MODIFY</span>;
         case 'delete':
-            return <span className={cn(baseClasses, 'bg-red-500/10 text-red-400 border-red-500/30')}>DELETE</span>;
+            return <span className={cn(baseClasses, 'bg-red-500/10 text-red-400')}>DELETE</span>;
     }
 }
 
@@ -33,8 +33,12 @@ const FileChangeItem = ({ fileChange, isSelected, isApplied, onSelectionChange }
 
   return (
     <div 
-        className='bg-gray-dark/50 rounded-md border border-gray-light overflow-hidden transition-all duration-150 flex items-center w-full gap-1 p-1 hover:border-accent-blue/50'
+        className='bg-gray-dark/50 rounded-md border border-gray-light overflow-hidden transition-all duration-150 flex items-center w-full gap-2 px-2 py-1 hover:border-accent-blue/50'
     >
+      <div className='flex-shrink-0 w-16 text-center'>
+          {getActionPill(fileChange.action)}
+      </div>
+      
       <div 
         onClick={(e) => {
             if (isApplied) return;
@@ -61,10 +65,6 @@ const FileChangeItem = ({ fileChange, isSelected, isApplied, onSelectionChange }
             )}
           </div>
       </button>
-      
-      <div className='flex items-center flex-shrink-0 pr-1'>
-          {getActionPill(fileChange.action)}
-      </div>
     </div>
   );
 };
