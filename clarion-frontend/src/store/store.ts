@@ -48,6 +48,11 @@ export interface AgentOutput {
   fileChanges: FileChange[];
   rawOutput: Record<string, any>;
   error?: string;
+  tokenUsage?: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
 }
 
 export interface AgentRun {
@@ -458,6 +463,7 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
           id: `${newRunId}-change-${index}`
         })),
         rawOutput: outputJson,
+        tokenUsage: outputJson.token_usage,
       }
     };
 

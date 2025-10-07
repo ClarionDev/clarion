@@ -35,6 +35,11 @@ export interface AgentOutput {
   summary?: string;
   file_changes?: FileChange[];
   error?: string;
+  token_usage?: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
   [key: string]: any;
 }
 

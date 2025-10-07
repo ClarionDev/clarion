@@ -68,6 +68,7 @@ const PromptZone = () => {
           fileChanges: result.file_changes || [],
           rawOutput: result,
           error: undefined,
+          tokenUsage: result.token_usage,
         },
       });
 

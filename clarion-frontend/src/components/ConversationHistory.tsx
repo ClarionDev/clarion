@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useAppStore, AgentRun } from '../store/store';
-import { Bot, User, Sparkles, ServerCrash } from 'lucide-react';
+import { Bot, User, Sparkles, ServerCrash, Coins } from 'lucide-react';
 import Change from './Change';
 import CopyButton from './ui/CopyButton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/Tooltip';
 
 const TypingIndicator = () => (
   <div className="flex items-center space-x-2 py-3 px-4 bg-gray-medium rounded-lg rounded-tl-none">
@@ -56,6 +57,24 @@ const AIMessage = ({ run }: { run: AgentRun }) => {
               </div>
             )}
             {run.output.fileChanges && run.output.fileChanges.length > 0 && <Change run={run} />}
+            {run.output.tokenUsage && (
+              <div className="flex justify-end">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="flex items-center gap-1.5 text-xs text-text-secondary cursor-default hover:text-text-primary transition-colors">
+                      <Coins size={14} />
+                      <span>{run.output.tokenUsage.total.toLocaleString()} tokens</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className='text-xs space-y-1'>
+                        <p>Prompt: {run.output.tokenUsage.prompt.toLocaleString()} tokens</p>
+                        <p>Completion: {run.output.tokenUsage.completion.toLocaleString()} tokens</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </div>
         );
       default:

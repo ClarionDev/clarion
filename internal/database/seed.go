@@ -20,11 +20,18 @@ type AgentRunData struct {
 	RawRequest map[string]interface{} `json:"rawRequest"`
 }
 
+type TokenUsage struct {
+	Prompt     int `json:"prompt"`
+	Completion int `json:"completion"`
+	Total      int `json:"total"`
+}
+
 type AgentRunOutput struct {
 	Summary     string       `json:"summary"`
 	FileChanges []FileChange `json:"fileChanges"`
 	RawOutput   any          `json:"rawOutput"`
 	Error       string       `json:"error,omitempty"`
+	TokenUsage  *TokenUsage  `json:"tokenUsage,omitempty"`
 }
 
 type FileChange struct {

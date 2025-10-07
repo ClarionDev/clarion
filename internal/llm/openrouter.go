@@ -51,6 +51,11 @@ type ChatCompletionResponse struct {
 			Content string `json:"content"`
 		} `json:"message"`
 	} `json:"choices"`
+	Usage *struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+	} `json:"usage,omitempty"`
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error,omitempty"`
@@ -127,6 +132,14 @@ func (o *OpenRouterProvider) Generate(ctx context.Context, messages []ChatMessag
 	var finalOutput map[string]any
 	if err := json.Unmarshal([]byte(jsonContent), &finalOutput); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal final JSON output from model: %w. Raw content: %s", err, jsonContent)
+	}
+
+	if apiResp.Usage != nil {
+		finalOutput["token_usage"] = map[string]int{
+			"prompt":     apiResp.Usage.PromptTokens,
+			"completion": apiResp.Usage.CompletionTokens,
+			"total":      apiResp.Usage.TotalTokens,
+		}
 	}
 
 	return finalOutput, nil
