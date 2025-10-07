@@ -381,7 +381,7 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
     };
 
     set(state => ({
-      runs: [newRun, ...state.runs],
+      runs: [...state.runs, newRun],
       currentRunStatus: 'running',
       selectedRunId: newRunId,
       prompt: '',
@@ -451,7 +451,7 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
 
     set(state => {
         const newState: Partial<Pick<AppState, 'runs' | 'selectedRunId' | 'selectedFileChanges'>> = {
-            runs: [newRun, ...state.runs],
+            runs: [...state.runs, newRun],
             selectedRunId: newRunId,
         };
         if (newRun.output?.fileChanges) {

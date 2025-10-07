@@ -97,15 +97,13 @@ const ConversationHistory = () => {
     }
   }, [runs]);
 
-  const reversedRuns = [...runs].reverse();
-
   return (
     <div ref={scrollRef} className='flex-grow overflow-y-auto p-6 bg-gray-dark'>
       {(!runs || runs.length === 0) ? (
         <EmptyState />
       ) : (
         <div className='space-y-8'>
-          {reversedRuns.map(run => (
+          {runs.map(run => (
             <div key={run.id} className="space-y-6 animate-in fade-in-0 duration-500">
               <UserMessage run={run} />
               <AIMessage run={run} />
