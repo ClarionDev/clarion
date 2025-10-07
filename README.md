@@ -30,11 +30,7 @@ Many AI development tools are like buying a high-performance, pre-built race car
 
 ## Screenshots
 
-![photo_2025-09-28_13-18-38](https://github.com/user-attachments/assets/ca8db285-a9df-4d28-8f2d-16791885b54e)
-![photo_2025-09-28_13-21-10](https://github.com/user-attachments/assets/f4513b5a-c169-4d29-9a01-35b3fb27adea)
-![photo_2025-09-28_13-23-17](https://github.com/user-attachments/assets/9be25ddd-e097-4ea6-a1b5-8f289f3757b3)
-![photo_2025-09-28_13-23-20](https://github.com/user-attachments/assets/a4ef0461-b064-4fce-a158-8b18f793fb1e)
-![photo_2025-09-28_13-23-24](https://github.com/user-attachments/assets/dda9766b-4dcc-453f-83a4-a48fefeb2df3)
+![output2](https://github.com/user-attachments/assets/86df0625-ce8e-49a1-b960-04d33db03cec)
 
 
 
