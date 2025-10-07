@@ -1,10 +1,11 @@
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface AccordionContextProps {
-  value: string | null;
-  onValueChange: (value: string | null) => void;
+  value: string[] | string | null;
+  onValueChange: (value: string) => void;
+  type: 'single' | 'multiple';
 }
 
 const AccordionContext = createContext<AccordionContextProps | null>(null);
@@ -19,40 +20,58 @@ const useAccordion = () => {
 
 const AccordionItemContext = createContext<{ value: string }>({ value: '' });
 
-export const Accordion = ({ children, value: controlledValue, onValueChange, className, type, collapsible }: { children: ReactNode, value?: string | null, onValueChange?: (value: string | null) => void, className?: string, type?: 'single', collapsible?: boolean }) => {
-  const [internalValue, setInternalValue] = useState<string | null>(null);
+export const Accordion = ({ children, defaultValue, className, type = 'single', collapsible = false }: { 
+  children: ReactNode, 
+  defaultValue?: string | string[], 
+  className?: string, 
+  type?: 'single' | 'multiple',
+  collapsible?: boolean 
+}) => {
+  const [value, setValue] = useState<string[] | string | null>(defaultValue || (type === 'multiple' ? [] : null));
 
-  const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : internalValue;
-  const handleValueChange = isControlled ? onValueChange : setInternalValue;
+  const handleValueChange = useCallback((itemValue: string) => {
+    if (type === 'multiple') {
+      setValue(prev => {
+        const newValues = Array.isArray(prev) ? [...prev] : [];
+        const index = newValues.indexOf(itemValue);
+        if (index > -1) {
+          newValues.splice(index, 1);
+        } else {
+          newValues.push(itemValue);
+        }
+        return newValues;
+      });
+    } else {
+      setValue(prev => (prev === itemValue && collapsible) ? null : itemValue);
+    }
+  }, [type, collapsible]);
 
   return (
-    <AccordionContext.Provider value={{ value: value || null, onValueChange: handleValueChange || (() => {}) }}>
+    <AccordionContext.Provider value={{ value, onValueChange: handleValueChange, type }}>
       <div className={cn("w-full", className)}>{children}</div>
     </AccordionContext.Provider>
   );
 };
 
-export const AccordionItem = ({ children, value }: { children: ReactNode, value: string }) => {
+export const AccordionItem = ({ children, value, className }: { children: ReactNode, value: string, className?: string }) => {
   return (
     <AccordionItemContext.Provider value={{ value }}>
-      <div className="border-b border-gray-light last:border-b-0">{children}</div>
+      <div className={cn("overflow-hidden", className)}>{children}</div>
     </AccordionItemContext.Provider>
   );
 };
 
 export const AccordionTrigger = ({ children, className, isIconVisible = true }: { children: ReactNode, className?: string, isIconVisible?: boolean }) => {
-  const { value: openItem, onValueChange } = useAccordion();
+  const { value: openItems, onValueChange, type } = useAccordion();
   const { value } = useContext(AccordionItemContext);
-  const isOpen = openItem === value;
-
-  const handleToggle = () => {
-    onValueChange(isOpen ? null : value);
-  };
+  
+  const isOpen = type === 'multiple' 
+    ? Array.isArray(openItems) && openItems.includes(value) 
+    : openItems === value;
 
   return (
     <button
-      onClick={handleToggle}
+      onClick={() => onValueChange(value)}
       className={cn("flex w-full items-center justify-between p-4 font-medium text-left text-text-primary hover:bg-gray-light/20 transition-colors", className)}
     >
       {children}
@@ -68,14 +87,16 @@ export const AccordionTrigger = ({ children, className, isIconVisible = true }: 
 };
 
 export const AccordionContent = ({ children }: { children: ReactNode }) => {
-  const { value: openItem } = useAccordion();
+  const { value: openItems, type } = useAccordion();
   const { value } = useContext(AccordionItemContext);
-  const isOpen = openItem === value;
+  const isOpen = type === 'multiple' 
+    ? Array.isArray(openItems) && openItems.includes(value) 
+    : openItems === value;
 
   if (!isOpen) return null;
 
   return (
-    <div className="overflow-hidden bg-gray-dark/50">
+    <div className="overflow-hidden">
       {children}
     </div>
   );

@@ -1,10 +1,7 @@
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
-import SystemPromptModal from './modals/SystemPromptModal';
-import OutputSchemaModal from './modals/OutputSchemaModal';
 import CodebaseContextModal from './modals/CodebaseContextModal';
 import SimulatorModal from './modals/SimulatorModal';
-import LLMConfigModal from './modals/LLMConfigModal';
 
 const Layout = () => {
   return (
@@ -14,11 +11,8 @@ const Layout = () => {
         <MainContent />
       </div>
       
-      <SystemPromptModal />
-      <OutputSchemaModal />
       <CodebaseContextModal />
       <SimulatorModal />
-      <LLMConfigModal />
     </div>
   );
 };

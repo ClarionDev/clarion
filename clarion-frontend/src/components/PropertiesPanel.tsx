@@ -6,7 +6,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import Label from './ui/Label';
 import Input from './ui/Input';
 import Button from './ui/Button';
-import { PlusCircle, X, Trash2, Info, Package, FileSearch, ChevronRight, Book, LayoutList, Code as CodeIcon, Eye } from 'lucide-react';
+import { PlusCircle, X, Info, Package, FileSearch, ChevronRight, Book, LayoutList, Code as CodeIcon, Eye } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from './ui/Tooltip';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -25,6 +25,15 @@ interface PropertiesPanelProps {
   onAgentChange: (changedFields: Partial<AgentPersona>) => void;
 }
 
+export const SystemPromptEditor = ({ agent, onAgentChange }: PropertiesPanelProps) => (
+  <div>
+    <Label className='flex justify-between items-center'>System Prompt <span className='text-xs text-text-secondary font-normal'>{countTokens(agent.systemPrompt)} tokens</span></Label>
+    <div className='border border-gray-light rounded-md overflow-hidden'>
+        <CodeMirror value={agent.systemPrompt} onChange={value => onAgentChange({ systemPrompt: value})} extensions={[javascript()]} theme={oneDark} height="250px" />
+    </div>
+  </div>
+)
+
 export const CoreIdentityTab = ({ agent, onAgentChange }: PropertiesPanelProps) => (
     <div className='p-6 space-y-6 max-w-4xl mx-auto overflow-y-auto h-full'>
         <div>
@@ -35,16 +44,9 @@ export const CoreIdentityTab = ({ agent, onAgentChange }: PropertiesPanelProps) 
             <Label htmlFor='agentDesc'>Description</Label>
             <Input id='agentDesc' value={agent.description} onChange={e => onAgentChange({ description: e.target.value})} />
         </div>
-        <div>
-             <Label className='flex justify-between items-center'>System Prompt <span className='text-xs text-text-secondary font-normal'>{countTokens(agent.systemPrompt)} tokens</span></Label>
-             <div className='border border-gray-light rounded-md overflow-hidden'>
-                <CodeMirror value={agent.systemPrompt} onChange={value => onAgentChange({ systemPrompt: value})} extensions={[javascript()]} theme={oneDark} height="250px" />
-             </div>
-        </div>
+        <SystemPromptEditor agent={agent} onAgentChange={onAgentChange} />
     </div>
 );
-
-// In clarion-frontend/src/components/PropertiesPanel.tsx
 
 export const LLMSettingsTab = ({ agent, onAgentChange }: PropertiesPanelProps) => {
     const { llmProviderConfigs } = useAppStore();
@@ -63,7 +65,6 @@ export const LLMSettingsTab = ({ agent, onAgentChange }: PropertiesPanelProps) =
         }
     };
     
-    // Helper to update a specific parameter
     const handleParamChange = (paramName: string, value: string | number) => {
         onAgentChange({
             llmConfig: {
@@ -201,7 +202,6 @@ const getAllFilePaths = (nodes: TreeNodeData[]): string[] => {
     return paths;
 };
 
-
 type FileStatus = 'included' | 'excluded' | 'folder';
 interface PreviewNode extends TreeNodeData {
     status: FileStatus;
@@ -252,6 +252,96 @@ const PreviewFileTree = ({ nodes, level = 0 }: { nodes: PreviewNode[]; level?: n
     </div>
   );
 }
+
+export const IncludePatternsEditor = ({ agent, onAgentChange }: PropertiesPanelProps) => {
+    const includeGlobs = agent.codebaseFilters?.includeGlobs || [];
+
+    const handleGlobChange = (index: number, value: string) => {
+        const newGlobs = includeGlobs.map((glob, i) => (i === index ? value : glob));
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, includeGlobs: newGlobs } });
+    };
+
+    const addGlob = () => {
+        const newGlobs = [...includeGlobs, ''];
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, includeGlobs: newGlobs } });
+    };
+
+    const removeGlob = (index: number) => {
+        const newGlobs = includeGlobs.filter((_, i) => i !== index);
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, includeGlobs: newGlobs } });
+    };
+
+    return (
+        <div>
+            <div className='flex items-center gap-2 mb-3'>
+                <h3 className='font-semibold text-sm'>Include Patterns</h3>
+                <TooltipProvider><Tooltip><TooltipTrigger asChild><button className='text-text-secondary'><Info size={14}/></button></TooltipTrigger><TooltipContent>{globTooltipContent}</TooltipContent></Tooltip></TooltipProvider>
+            </div>
+            <p className='text-xs text-text-secondary mb-3'>Specify which files the agent should read. If empty, all files not excluded are included.</p>
+            <div className='space-y-2'>
+                {includeGlobs.map((glob, i) => (
+                    <div key={i} className='flex items-center gap-2'>
+                        <Input value={glob} onChange={e => handleGlobChange(i, e.target.value)} placeholder='e.g. src/**/*.tsx' />
+                        <Button onClick={() => removeGlob(i)} variant='ghost' size='icon' className='text-text-secondary h-9 w-9'><X size={16}/></Button>
+                    </div>
+                ))}
+            </div>
+            <Button onClick={addGlob} variant='ghost' size='sm' className='mt-3 text-accent-blue'><PlusCircle size={16} className='mr-2'/> Add Pattern</Button>
+        </div>
+    );
+};
+
+export const ExcludePatternsEditor = ({ agent, onAgentChange }: PropertiesPanelProps) => {
+    const excludeGlobs = agent.codebaseFilters?.excludeGlobs || [];
+
+    const handleGlobChange = (index: number, value: string) => {
+        const newGlobs = excludeGlobs.map((glob, i) => (i === index ? value : glob));
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, excludeGlobs: newGlobs } });
+    };
+
+    const addGlob = () => {
+        const newGlobs = [...excludeGlobs, ''];
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, excludeGlobs: newGlobs } });
+    };
+
+    const removeGlob = (index: number) => {
+        const newGlobs = excludeGlobs.filter((_, i) => i !== index);
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, excludeGlobs: newGlobs } });
+    };
+    
+    const applyPreset = (presetName: keyof typeof presets) => {
+        const presetGlobs = presets[presetName];
+        const newExcludeGlobs = [...new Set([...excludeGlobs, ...presetGlobs])];
+        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, excludeGlobs: newExcludeGlobs } });
+    }
+
+    return (
+        <div>
+            <div className='p-4 rounded-lg bg-gray-medium/80 border border-gray-light mb-4'>
+                <h3 className='font-semibold mb-2 flex items-center gap-2 text-sm'><Package size={16} className='text-accent-blue'/> Apply an Exclude Preset</h3>
+                <div className='flex items-center gap-2'>
+                    {Object.keys(presets).map(name => (
+                        <Button key={name} onClick={() => applyPreset(name as keyof typeof presets)} variant='secondary' size='sm'>{name}</Button>
+                    ))}
+                </div>
+            </div>
+            <div className='flex items-center gap-2 mb-3'>
+                <h3 className='font-semibold text-sm'>Exclude Patterns</h3>
+                <TooltipProvider><Tooltip><TooltipTrigger asChild><button className='text-text-secondary'><Info size={14}/></button></TooltipTrigger><TooltipContent>{globTooltipContent}</TooltipContent></Tooltip></TooltipProvider>
+            </div>
+            <p className='text-xs text-text-secondary mb-3'>Specify files or directories to ignore. Exclude rules take priority over include rules.</p>
+            <div className='space-y-2'>
+                {excludeGlobs.map((glob, i) => (
+                    <div key={i} className='flex items-center gap-2'>
+                        <Input value={glob} onChange={e => handleGlobChange(i, e.target.value)} placeholder='e.g. **/node_modules/**' />
+                        <Button onClick={() => removeGlob(i)} variant='ghost' size='icon' className='text-text-secondary h-9 w-9'><X size={16}/></Button>
+                    </div>
+                ))}
+            </div>
+            <Button onClick={addGlob} variant='ghost' size='sm' className='mt-3 text-accent-blue'><PlusCircle size={16} className='mr-2'/> Add Pattern</Button>
+        </div>
+    );
+};
 
 export const CodeContextTab = ({ agent, onAgentChange }: PropertiesPanelProps) => {
     const { fileTree } = useAppStore(state => ({ fileTree: state.fileTree }));
@@ -307,80 +397,16 @@ export const CodeContextTab = ({ agent, onAgentChange }: PropertiesPanelProps) =
         updatePreview();
     }, [debouncedIncludeGlobs, debouncedExcludeGlobs, allFilePaths, fileTree]);
 
-
-    const handleGlobChange = (type: 'include' | 'exclude', index: number, value: string) => {
-        const key = type === 'include' ? 'includeGlobs' : 'excludeGlobs';
-        const newGlobs = (agent.codebaseFilters[key] || []).map((glob, i) => i === index ? value : glob);
-        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, [key]: newGlobs } });
-    }
-
-    const addGlob = (type: 'include' | 'exclude') => {
-        const key = type === 'include' ? 'includeGlobs' : 'excludeGlobs';
-        const newGlobs = [...(agent.codebaseFilters[key] || []), ''];
-        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, [key]: newGlobs } });
-    }
-
-    const removeGlob = (type: 'include' | 'exclude', index: number) => {
-        const key = type === 'include' ? 'includeGlobs' : 'excludeGlobs';
-        const newGlobs = (agent.codebaseFilters[key] || []).filter((_, i) => i !== index);
-        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, [key]: newGlobs } });
-    }
-
-    const applyPreset = (presetName: keyof typeof presets) => {
-        const presetGlobs = presets[presetName];
-        const currentExcludeGlobs = agent.codebaseFilters?.excludeGlobs || [];
-        const newExcludeGlobs = [...new Set([...currentExcludeGlobs, ...presetGlobs])];
-        onAgentChange({ codebaseFilters: { ...agent.codebaseFilters, excludeGlobs: newExcludeGlobs } });
-    }
-
     return (
        <PanelGroup direction='horizontal' className='h-full'>
             <Panel defaultSize={50} minSize={30}>
                 <div className='p-6 space-y-6 max-w-4xl mx-auto overflow-y-auto h-full'>
-                    <div className='p-4 rounded-lg bg-gray-medium/80 border border-gray-light'>
-                        <h3 className='font-semibold mb-2 flex items-center gap-2'><Package size={18} className='text-accent-blue'/> Apply an Exclude Preset</h3>
-                        <p className='text-xs text-text-secondary mb-3'>Quickly add common ignore patterns for different project types. Presets will be added to your existing list.</p>
-                        <div className='flex items-center gap-2'>
-                            {Object.keys(presets).map(name => (
-                                <Button key={name} onClick={() => applyPreset(name as keyof typeof presets)} variant='secondary' size='sm'>{name}</Button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className='grid grid-cols-1 gap-6'>
-                        <div className='p-4 rounded-lg bg-gray-medium/80 border border-gray-light'>
-                            <div className='flex items-center gap-2 mb-3'>
-                                <h3 className='font-semibold'>Include Patterns</h3>
-                                <TooltipProvider><Tooltip><TooltipTrigger asChild><button className='text-text-secondary'><Info size={14}/></button></TooltipTrigger><TooltipContent>{globTooltipContent}</TooltipContent></Tooltip></TooltipProvider>
-                            </div>
-                            <p className='text-xs text-text-secondary mb-3'>Specify which files the agent should read. If empty, all files not excluded are included.</p>
-                            <div className='space-y-2'>
-                                {includeGlobs.map((glob, i) => (
-                                    <div key={i} className='flex items-center gap-2'>
-                                        <Input value={glob} onChange={e => handleGlobChange('include', i, e.target.value)} placeholder='e.g. src/**/*.tsx' />
-                                        <Button onClick={() => removeGlob('include', i)} variant='ghost' size='icon' className='text-text-secondary h-9 w-9'><X size={16}/></Button>
-                                    </div>
-                                ))}
-                            </div>
-                            <Button onClick={() => addGlob('include')} variant='ghost' size='sm' className='mt-3 text-accent-blue'><PlusCircle size={16} className='mr-2'/> Add Pattern</Button>
-                        </div>
-                        <div className='p-4 rounded-lg bg-gray-medium/80 border border-gray-light'>
-                            <div className='flex items-center gap-2 mb-3'>
-                                <h3 className='font-semibold'>Exclude Patterns</h3>
-                                <TooltipProvider><Tooltip><TooltipTrigger asChild><button className='text-text-secondary'><Info size={14}/></button></TooltipTrigger><TooltipContent>{globTooltipContent}</TooltipContent></Tooltip></TooltipProvider>
-                            </div>
-                             <p className='text-xs text-text-secondary mb-3'>Specify files or directories to ignore. Exclude rules take priority over include rules.</p>
-                            <div className='space-y-2'>
-                                {excludeGlobs.map((glob, i) => (
-                                    <div key={i} className='flex items-center gap-2'>
-                                        <Input value={glob} onChange={e => handleGlobChange('exclude', i, e.target.value)} placeholder='e.g. **/node_modules/**' />
-                                        <Button onClick={() => removeGlob('exclude', i)} variant='ghost' size='icon' className='text-text-secondary h-9 w-9'><X size={16}/></Button>
-                                    </div>
-                                ))}
-                            </div>
-                            <Button onClick={() => addGlob('exclude')} variant='ghost' size='sm' className='mt-3 text-accent-blue'><PlusCircle size={16} className='mr-2'/> Add Pattern</Button>
-                        </div>
-                    </div>
+                  <div className='p-4 rounded-lg bg-gray-medium/80 border border-gray-light'>
+                    <IncludePatternsEditor agent={agent} onAgentChange={onAgentChange} />
+                  </div>
+                  <div className='p-4 rounded-lg bg-gray-medium/80 border border-gray-light'>
+                    <ExcludePatternsEditor agent={agent} onAgentChange={onAgentChange} />
+                  </div>
                 </div>
             </Panel>
             <PanelResizeHandle className='w-1.5 bg-gray-dark hover:bg-accent-blue/50 transition-colors data-[resize-handle-state=drag]:bg-accent-blue' />
@@ -483,7 +509,6 @@ export const OutputSchemaTab = ({ agent, onAgentChange }: PropertiesPanelProps) 
                         <Eye size={16} className='mr-2'/> Preview
                     </Button>
                     <SchemaTemplateSelector onSelect={handleTemplateSelect} />
-                    <Button variant='secondary' size='sm' onClick={() => { onAgentChange({ outputSchema: { schema: schemaForEditor }}) }}>Save</Button>
                 </div>
             </div>
             

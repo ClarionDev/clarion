@@ -25,7 +25,6 @@ import { open } from '@tauri-apps/plugin-dialog';
 
 export type ActiveView = 'projects' | 'file-tree' | 'agent-persona' | 'knowledge-base' | 'marketplace' | 'canvas-editor' | 'llm-configs';
 export type AgentStatus = 'idle' | 'running' | 'success' | 'error';
-export type AgentConfigSection = 'systemPrompt' | 'outputSchema' | 'codebase' | 'llmSettings' | null;
 
 export interface OpenFile extends TreeNodeData {
     isDiff?: boolean;
@@ -72,6 +71,13 @@ export interface TerminalSession {
     name: string;
     history: TerminalEntry[];
     commandHistory: string[];
+}
+
+export type ConfigPanelTab = 'core' | 'llm' | 'context' | 'output' | 'variables' | 'playground';
+
+interface ConfigPanelState {
+  isOpen: boolean;
+  defaultOpenItems: string[];
 }
 
 interface AppState {
@@ -128,10 +134,12 @@ interface AppState {
   activeAgent: AgentPersona | null;
   setActiveAgent: (agent: AgentPersona | null, fromInitialLoad?: boolean) => void;
   agentStateForEdit: AgentPersona | null;
-  setAgentStateForEdit: (agent: AgentPersona | null) => void;
+  setAgentStateForEdit: (agent: Partial<AgentPersona>) => void;
   initializeAgentForEdit: () => void;
-  activeConfigSection: AgentConfigSection;
-  setActiveConfigSection: (section: AgentConfigSection) => void;
+
+  configPanel: ConfigPanelState;
+  openConfigPanel: (itemsToOpen: string[]) => void;
+  closeConfigPanel: () => void;
 
   isSimulatorModalOpen: boolean;
   simulatorRequestPayload: AgentRunRequest | null;
@@ -548,15 +556,24 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
     }
   },
   agentStateForEdit: null,
-  setAgentStateForEdit: (agent) => set({ agentStateForEdit: agent }),
+  setAgentStateForEdit: (updates) => set(state => ({
+    agentStateForEdit: state.agentStateForEdit ? { ...state.agentStateForEdit, ...updates } : (updates as AgentPersona)
+  })),
   initializeAgentForEdit: () => {
     const { activeAgent } = get();
     if (activeAgent) {
       set({ agentStateForEdit: JSON.parse(JSON.stringify(activeAgent)) });
     }
   },
-  activeConfigSection: null,
-  setActiveConfigSection: (section) => set({ activeConfigSection: section }),
+
+  configPanel: { isOpen: false, defaultOpenItems: [] },
+  openConfigPanel: (itemsToOpen) => {
+    get().initializeAgentForEdit();
+    set({ configPanel: { isOpen: true, defaultOpenItems: itemsToOpen } });
+  },
+  closeConfigPanel: () => {
+    set({ configPanel: { isOpen: false, defaultOpenItems: [] }, agentStateForEdit: null });
+  },
 
   isSimulatorModalOpen: false,
   simulatorRequestPayload: null,

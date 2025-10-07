@@ -3,15 +3,14 @@ import { Cpu, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const LLMSelector = () => {
-  const { activeAgent, setActiveConfigSection, initializeAgentForEdit } = useAppStore();
+  const { activeAgent, openConfigPanel } = useAppStore();
 
   if (!activeAgent) {
     return null;
   }
 
   const handleOpenModal = () => {
-    initializeAgentForEdit();
-    setActiveConfigSection('llmSettings');
+    openConfigPanel('llm');
   };
 
   const llmProvider = activeAgent.llmConfig?.provider || 'Default';

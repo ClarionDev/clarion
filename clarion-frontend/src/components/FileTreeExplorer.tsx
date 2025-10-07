@@ -11,6 +11,7 @@ import { useAppStore } from "../store/store";
 import AgentNav from "./AgentNav";
 import MainDiffViewer from "./MainDiffViewer";
 import FileExplorerContextMenu from "./ui/FileExplorerContextMenu";
+import ConfigurationPanel from "./ConfigurationPanel";
 
 const FileTreeExplorer = () => {
   const {
@@ -27,6 +28,7 @@ const FileTreeExplorer = () => {
     pasteNode,
     updateOpenFileContent,
     saveActiveFile,
+    configPanel,
   } = useAppStore();
   
   const [layout, setLayout] = useState<'default' | 'terminal-right'>('default');
@@ -220,27 +222,39 @@ const FileTreeExplorer = () => {
           <Panel minSize={30} className="flex flex-col">
               <AgentNav />
               <div className="flex-grow overflow-hidden">
-                  {layout === 'default' ? (
-                      <PanelGroup direction="vertical">
-                          <Panel defaultSize={70} minSize={30}>
-                              {mainEditorGroup}
-                          </Panel>
-                          <PanelResizeHandle className='h-1.5 bg-gray-dark hover:bg-accent-blue/50 transition-colors data-[resize-handle-state=drag]:bg-accent-blue' />
-                          <Panel collapsible={true} defaultSize={30} minSize={15}>
-                              <Terminal />
-                          </Panel>
-                      </PanelGroup>
-                  ) : (
-                      <PanelGroup direction="horizontal">
-                          <Panel defaultSize={70} minSize={30}>
-                              {mainEditorGroup}
-                          </Panel>
-                          <PanelResizeHandle className='w-1.5 bg-gray-dark hover:bg-accent-blue/50 transition-colors data-[resize-handle-state=drag]:bg-accent-blue' />
-                          <Panel collapsible={true} defaultSize={30} minSize={20}>
-                              <Terminal />
-                          </Panel>
-                      </PanelGroup>
-                  )}
+                  <PanelGroup direction="horizontal">
+                    <Panel defaultSize={configPanel.isOpen ? 65 : 100} minSize={40}>
+                      {layout === 'default' ? (
+                          <PanelGroup direction="vertical">
+                              <Panel defaultSize={70} minSize={30}>
+                                  {mainEditorGroup}
+                              </Panel>
+                              <PanelResizeHandle className='h-1.5 bg-gray-dark hover:bg-accent-blue/50 transition-colors data-[resize-handle-state=drag]:bg-accent-blue' />
+                              <Panel collapsible={true} defaultSize={30} minSize={15}>
+                                  <Terminal />
+                              </Panel>
+                          </PanelGroup>
+                      ) : (
+                          <PanelGroup direction="horizontal">
+                              <Panel defaultSize={70} minSize={30}>
+                                  {mainEditorGroup}
+                              </Panel>
+                              <PanelResizeHandle className='w-1.5 bg-gray-dark hover:bg-accent-blue/50 transition-colors data-[resize-handle-state=drag]:bg-accent-blue' />
+                              <Panel collapsible={true} defaultSize={30} minSize={20}>
+                                  <Terminal />
+                              </Panel>
+                          </PanelGroup>
+                      )}
+                    </Panel>
+                    {configPanel.isOpen && (
+                      <>
+                        <PanelResizeHandle className='w-1.5 bg-gray-dark hover:bg-accent-blue/50 transition-colors data-[resize-handle-state=drag]:bg-accent-blue' />
+                        <Panel collapsible={true} defaultSize={35} minSize={30}>
+                          <ConfigurationPanel />
+                        </Panel>
+                      </>
+                    )}
+                  </PanelGroup>
               </div>
           </Panel>
       </PanelGroup>
