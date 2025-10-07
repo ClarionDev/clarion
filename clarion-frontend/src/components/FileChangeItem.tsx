@@ -32,7 +32,9 @@ const FileChangeItem = ({ fileChange, isSelected, isApplied, onSelectionChange }
   const directoryPath = parts.join('/');
 
   return (
-    <div className='bg-gray-dark/50 rounded-md border border-gray-light overflow-hidden transition-all duration-150 flex items-center w-full gap-2 p-1.5 group hover:border-accent-blue/50'>
+    <div 
+        className='bg-gray-dark/50 rounded-md border border-gray-light overflow-hidden transition-all duration-150 flex items-center w-full gap-1 p-1 hover:border-accent-blue/50'
+    >
       <div 
         onClick={(e) => {
             if (isApplied) return;
@@ -50,17 +52,17 @@ const FileChangeItem = ({ fileChange, isSelected, isApplied, onSelectionChange }
         </span>
       </div>
 
-      <button onClick={() => openDiff(fileChange)} className='flex-grow flex items-center gap-2 text-left truncate p-1 rounded-md hover:bg-gray-light/30'>
+      <button onClick={() => openDiff(fileChange)} className='flex-grow min-w-0 flex items-center gap-2 text-left px-2 py-1 rounded-md hover:bg-gray-light/30'>
           <FileIcon filename={fileName} type='file'/>
-          <div className='flex flex-col truncate'>
-            <span className='text-sm text-text-primary truncate font-medium'>{fileName}</span>
+          <div className='flex-grow min-w-0 truncate'>
+            <span className='block text-sm text-text-primary truncate font-medium'>{fileName}</span>
             {directoryPath && (
-                <span className='font-mono text-xs text-text-secondary truncate'>{directoryPath}</span>
+                <span className='block font-mono text-xs text-text-secondary truncate'>{directoryPath}</span>
             )}
           </div>
       </button>
       
-      <div className='flex items-center gap-2 flex-shrink-0 pr-2'>
+      <div className='flex items-center flex-shrink-0 pr-1'>
           {getActionPill(fileChange.action)}
       </div>
     </div>
