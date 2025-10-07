@@ -68,7 +68,7 @@ const AIMessage = ({ run }: { run: AgentRun }) => {
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent-blue/20 text-accent-blue flex items-center justify-center">
         <Bot size={18} />
       </div>
-      <div className="max-w-3xl">
+      <div className="max-w-3xl min-w-0">
         {renderContent()}
       </div>
     </div>
