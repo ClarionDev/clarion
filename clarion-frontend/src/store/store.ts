@@ -139,6 +139,8 @@ interface AppState {
   configPanel: ConfigPanelState;
   openConfigPanel: (itemsToOpen: string[]) => void;
   closeConfigPanel: () => void;
+  addManualIncludeFilter: (node: TreeNodeData) => void;
+  addManualExcludeFilter: (node: TreeNodeData) => void;
 
   activeModalSection: ModalConfigSection;
   setActiveModalSection: (section: ModalConfigSection) => void;
@@ -573,8 +575,62 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
     get().initializeAgentForEdit();
     set({ configPanel: { isOpen: true, defaultOpenItems: itemsToOpen } });
   },
-  closeConfigPanel: () => {
-    set({ configPanel: { isOpen: false, defaultOpenItems: [] }, agentStateForEdit: null });
+  closeConfigPanel: () => set({ configPanel: { isOpen: false, defaultOpenItems: [] }, agentStateForEdit: null }),
+
+  addManualIncludeFilter: (node) => {
+    const { setAgentStateForEdit, initializeAgentForEdit, activeAgent, agentStateForEdit, configPanel } = get();
+
+    if (!configPanel.isOpen || !agentStateForEdit) {
+      if (!activeAgent) return;
+      initializeAgentForEdit();
+    }
+
+    const stateForEdit = get().agentStateForEdit!;
+    const glob = node.type === 'folder' ? (node.path ? `${node.path}/**` : '**') : node.path;
+    
+    const currentIncludeGlobs = stateForEdit.codebaseFilters?.includeGlobs || [];
+    const currentExcludeGlobs = stateForEdit.codebaseFilters?.excludeGlobs || [];
+
+    const newIncludeGlobs = [...new Set([...currentIncludeGlobs, glob])];
+    const newExcludeGlobs = currentExcludeGlobs.filter(g => g !== glob);
+
+    setAgentStateForEdit({ 
+        codebaseFilters: {
+            ...stateForEdit.codebaseFilters,
+            includeGlobs: newIncludeGlobs,
+            excludeGlobs: newExcludeGlobs,
+        }
+    });
+
+    set({ configPanel: { isOpen: true, defaultOpenItems: ['include-patterns', 'exclude-patterns'] } });
+  },
+
+  addManualExcludeFilter: (node) => {
+    const { setAgentStateForEdit, initializeAgentForEdit, activeAgent, agentStateForEdit, configPanel } = get();
+
+    if (!configPanel.isOpen || !agentStateForEdit) {
+      if (!activeAgent) return;
+      initializeAgentForEdit();
+    }
+
+    const stateForEdit = get().agentStateForEdit!;
+    const glob = node.type === 'folder' ? (node.path ? `${node.path}/**` : '**') : node.path;
+
+    const currentIncludeGlobs = stateForEdit.codebaseFilters?.includeGlobs || [];
+    const currentExcludeGlobs = stateForEdit.codebaseFilters?.excludeGlobs || [];
+
+    const newExcludeGlobs = [...new Set([...currentExcludeGlobs, glob])];
+    const newIncludeGlobs = currentIncludeGlobs.filter(g => g !== glob);
+
+    setAgentStateForEdit({ 
+        codebaseFilters: {
+            ...stateForEdit.codebaseFilters,
+            includeGlobs: newIncludeGlobs,
+            excludeGlobs: newExcludeGlobs,
+        }
+    });
+
+    set({ configPanel: { isOpen: true, defaultOpenItems: ['include-patterns', 'exclude-patterns'] } });
   },
 
   activeModalSection: null,

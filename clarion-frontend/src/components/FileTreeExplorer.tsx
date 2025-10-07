@@ -29,6 +29,8 @@ const FileTreeExplorer = () => {
     updateOpenFileContent,
     saveActiveFile,
     configPanel,
+    addManualIncludeFilter,
+    addManualExcludeFilter,
   } = useAppStore();
   
   const [layout, setLayout] = useState<'default' | 'terminal-right'>('default');
@@ -103,7 +105,13 @@ const FileTreeExplorer = () => {
         }
     };
 
+    const handleManualInclude = () => addManualIncludeFilter(node);
+    const handleManualExclude = () => addManualExcludeFilter(node);
+
     let items = [
+      { label: 'Manually Include', action: handleManualInclude },
+      { label: 'Manually Exclude', action: handleManualExclude },
+      { isSeparator: true },
       { label: 'New File', action: handleNewFile },
     ];
     if (isFolder || clipboard) {
@@ -115,7 +123,7 @@ const FileTreeExplorer = () => {
     items.push({ label: 'Delete', action: handleDelete });
     
     return items;
-  }, [contextMenu, clipboard, createFile, deleteNode, setClipboard, pasteNode]);
+  }, [contextMenu, clipboard, createFile, deleteNode, setClipboard, pasteNode, addManualIncludeFilter, addManualExcludeFilter]);
 
   const projectRootNode = useMemo((): TreeNodeData | null => {
     if (!currentProject) {
