@@ -2,6 +2,7 @@ import Sidebar from './Sidebar';
 import MainContent from './MainContent';
 import CodebaseContextModal from './modals/CodebaseContextModal';
 import SimulatorModal from './modals/SimulatorModal';
+import LLMConfigModal from './modals/LLMConfigModal';
 
 const Layout = () => {
   return (
@@ -13,6 +14,7 @@ const Layout = () => {
       
       <CodebaseContextModal />
       <SimulatorModal />
+      <LLMConfigModal />
     </div>
   );
 };

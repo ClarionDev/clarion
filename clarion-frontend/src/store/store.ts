@@ -25,6 +25,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 
 export type ActiveView = 'projects' | 'file-tree' | 'agent-persona' | 'knowledge-base' | 'marketplace' | 'canvas-editor' | 'llm-configs';
 export type AgentStatus = 'idle' | 'running' | 'success' | 'error';
+export type ModalConfigSection = 'llmSettings' | 'codebase' | null;
 
 export interface OpenFile extends TreeNodeData {
     isDiff?: boolean;
@@ -72,8 +73,6 @@ export interface TerminalSession {
     history: TerminalEntry[];
     commandHistory: string[];
 }
-
-export type ConfigPanelTab = 'core' | 'llm' | 'context' | 'output' | 'variables' | 'playground';
 
 interface ConfigPanelState {
   isOpen: boolean;
@@ -140,6 +139,9 @@ interface AppState {
   configPanel: ConfigPanelState;
   openConfigPanel: (itemsToOpen: string[]) => void;
   closeConfigPanel: () => void;
+
+  activeModalSection: ModalConfigSection;
+  setActiveModalSection: (section: ModalConfigSection) => void;
 
   isSimulatorModalOpen: boolean;
   simulatorRequestPayload: AgentRunRequest | null;
@@ -574,6 +576,9 @@ export const useAppStore = createWithEqualityFn<AppState>((set, get) => ({
   closeConfigPanel: () => {
     set({ configPanel: { isOpen: false, defaultOpenItems: [] }, agentStateForEdit: null });
   },
+
+  activeModalSection: null,
+  setActiveModalSection: (section) => set({ activeModalSection: section }),
 
   isSimulatorModalOpen: false,
   simulatorRequestPayload: null,

@@ -10,7 +10,7 @@ const PromptZone = () => {
   const [localPrompt, setLocalPrompt] = useState('');
   const debouncedPrompt = useDebounce(localPrompt, 300);
 
-  const { 
+  const {
     setPrompt,
     activeAgent,
     contextFilePaths, 
@@ -19,7 +19,7 @@ const PromptZone = () => {
     startNewRun,
     updateRun,
     currentRunStatus,
-    setActiveConfigSection,
+    setActiveModalSection,
   } = useAppStore(state => ({
     setPrompt: state.setPrompt,
     activeAgent: state.activeAgent,
@@ -29,7 +29,7 @@ const PromptZone = () => {
     startNewRun: state.startNewRun,
     updateRun: state.updateRun,
     currentRunStatus: state.currentRunStatus,
-    setActiveConfigSection: state.setActiveConfigSection,
+    setActiveModalSection: state.setActiveModalSection,
   }));
 
   useEffect(() => {
@@ -88,7 +88,7 @@ const PromptZone = () => {
     <div className="p-4 border-t border-gray-light flex-shrink-0 flex flex-col gap-3">
       <div className='flex justify-end items-center text-xs text-text-secondary'>
         <button 
-          onClick={() => setActiveConfigSection('codebase')} 
+          onClick={() => setActiveModalSection('codebase')} 
           className='flex items-center gap-2 hover:text-text-primary'
         >
           <Files size={14} />

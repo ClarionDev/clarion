@@ -3,17 +3,17 @@ import { FileCode, X, Info } from 'lucide-react';
 import Button from '../ui/Button';
 
 const CodebaseContextModal = () => {
-  const { activeConfigSection, setActiveConfigSection, contextFilePaths, agentFilteredFilePaths, activeAgent } = useAppStore();
+  const { activeModalSection, setActiveModalSection, contextFilePaths, agentFilteredFilePaths, activeAgent } = useAppStore();
 
   const hasFilters = activeAgent && (activeAgent.codebaseFilters?.includeGlobs?.length > 0 || activeAgent.codebaseFilters?.excludeGlobs?.length > 0);
   const finalContextPaths = hasFilters ? agentFilteredFilePaths : contextFilePaths;
 
-  if (activeConfigSection !== 'codebase') {
+  if (activeModalSection !== 'codebase') {
     return null;
   }
 
   const handleClose = () => {
-    setActiveConfigSection(null);
+    setActiveModalSection(null);
   };
 
   return (
