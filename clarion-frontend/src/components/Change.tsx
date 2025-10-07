@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/Accordion';
 import { AgentRun, useAppStore } from '../store/store';
-import { Check, CheckCheck, CircleDashed } from 'lucide-react';
-import FileDiffViewer from './FileDiffViewer';
+import { Check, CheckCheck, Minus, FileEdit } from 'lucide-react';
+import FileChangeItem from './FileChangeItem';
 import Button from './ui/Button';
 import { cn } from '../lib/utils';
 import { applyFileChanges, FileChange } from '../lib/api';
@@ -61,65 +60,65 @@ const Change = ({ run }: ChangeProps) => {
     setIsLoading(false);
   };
 
-  if (!run.output) return null;
+  if (!run.output || !run.output.fileChanges || run.output.fileChanges.length === 0) {
+    return null;
+  }
+  
   const { fileChanges } = run.output;
-
-  const changesToApplyCount = (run.output?.fileChanges || []).filter(fc => selectedPaths.has(fc.path) && !appliedPaths.has(fc.path)).length;
+  const changesToApplyCount = fileChanges.filter(fc => selectedPaths.has(fc.path) && !appliedPaths.has(fc.path)).length;
 
   return (
-    <div className="bg-gray-dark rounded-lg border border-gray-light overflow-hidden">
-      <Accordion type="single" collapsible defaultValue={`change-${run.id}`} className="w-full">
-        <AccordionItem value={`change-${run.id}`} className="border-none">
-          <AccordionTrigger className="p-4 hover:no-underline data-[state=open]:bg-gray-medium/50">
-            <div className='flex items-center justify-between w-full pr-2'>
-              <p className='font-semibold text-text-primary'>View {fileChanges.length} file change(s)</p>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="border-t border-gray-light/50 p-4 space-y-2">
-              <div className='flex justify-between items-center mb-2 pb-2 border-b border-gray-light/50'>
-                  <div 
-                      onClick={() => {
-                        if (selectionStatus === 'all_applied') return;
-                        toggleAllFileChangeSelections(run.id, unappliedPaths, selectionStatus !== 'all');
-                      }}
-                      className={cn(
-                        'flex items-center gap-2 p-1 -ml-1 rounded-md hover:bg-gray-light',
-                        selectionStatus === 'all_applied' ? 'cursor-not-allowed' : 'cursor-pointer'
-                      )}
-                    >
-                      <span className={cn('flex items-center justify-center h-4 w-4 rounded border transition-colors',
-                          {
-                            'bg-transparent border-gray-light': selectionStatus === 'none',
-                            'bg-accent-blue border-accent-blue': selectionStatus === 'all',
-                            'bg-gray-light border-gray-light': selectionStatus === 'all_applied',
-                            'bg-accent-blue/50 border-accent-blue/50': selectionStatus === 'some',
-                          }
-                      )}>
-                          {selectionStatus === 'all' && <Check className="w-3 h-3 text-white" />}
-                          {selectionStatus === 'some' && <CircleDashed className="w-3 h-3 text-white" />}
-                          {selectionStatus === 'all_applied' && <CheckCheck className="w-3 h-3 text-text-primary" />}
-                      </span>
-                      <span className='text-xs font-medium'>{selectedPaths.size} selected / {allPaths.length} total ({appliedPaths.size} applied)</span>
-                  </div>
-                  <Button size="sm" onClick={handleApplyChanges} disabled={isLoading || changesToApplyCount === 0}>
-                      {isLoading ? 'Applying...' : <><CheckCheck size={16} className="mr-2" /> Apply {changesToApplyCount > 0 ? changesToApplyCount : ''} Change(s)</>}
-                  </Button>
+    <div className="bg-gray-dark/50 rounded-lg border border-gray-light overflow-hidden">
+      <div className="p-3 border-b border-gray-light flex justify-between items-center bg-gray-medium/30">
+        <div className='flex items-center gap-2'>
+            <FileEdit size={16} className='text-accent-blue'/>
+            <h4 className='font-semibold text-sm'>Proposed File Changes ({fileChanges.length})</h4>
+        </div>
+      </div>
+      <div className="p-3 space-y-3">
+          <div className='flex justify-between items-center pb-2 border-b border-gray-light/50'>
+              <div 
+                  onClick={() => {
+                    if (selectionStatus === 'all_applied') return;
+                    toggleAllFileChangeSelections(run.id, unappliedPaths, selectionStatus !== 'all');
+                  }}
+                  className={cn(
+                    'flex items-center gap-2 p-1 -ml-1 rounded-md hover:bg-gray-light/30',
+                    selectionStatus === 'all_applied' ? 'cursor-not-allowed' : 'cursor-pointer'
+                  )}
+                >
+                  <span className={cn('flex items-center justify-center h-4 w-4 rounded border transition-colors',
+                      {
+                        'bg-transparent border-gray-light': selectionStatus === 'none',
+                        'bg-accent-blue border-accent-blue': selectionStatus === 'all',
+                        'bg-gray-light border-gray-light': selectionStatus === 'all_applied',
+                        'bg-accent-blue/50 border-accent-blue': selectionStatus === 'some',
+                      }
+                  )}>
+                      {selectionStatus === 'all' && <Check className="w-3 h-3 text-white" />}
+                      {selectionStatus === 'some' && <Minus className="w-3 h-3 text-white" />}
+                      {selectionStatus === 'all_applied' && <CheckCheck className="w-3 h-3 text-text-primary" />}
+                  </span>
+                  <span className='text-xs font-medium text-text-secondary'>{selectedPaths.size} of {allPaths.length} selected</span>
               </div>
+              <Button size="sm" onClick={handleApplyChanges} disabled={isLoading || changesToApplyCount === 0}>
+                  {isLoading ? 'Applying...' : <><CheckCheck size={16} className="mr-2" /> Apply {changesToApplyCount > 0 ? changesToApplyCount : ''} Change(s)</>}
+              </Button>
+          </div>
 
-              {fileChanges.map(change => (
-                <FileDiffViewer
-                  key={change.id || change.path}
-                  fileChange={change}
-                  isSelected={selectedPaths.has(change.path)}
-                  onSelectionChange={() => toggleFileChangeSelection(run.id, change.path)}
-                  isApplied={appliedPaths.has(change.path)}
-                />
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          <div className="space-y-2">
+            {fileChanges.map(change => (
+              <FileChangeItem
+                key={change.id || change.path}
+                fileChange={change}
+                isSelected={selectedPaths.has(change.path)}
+                onSelectionChange={() => toggleFileChangeSelection(run.id, change.path)}
+                isApplied={appliedPaths.has(change.path)}
+              />
+            ))}
+          </div>
+        </div>
+        
       <Notification 
         show={showNotification} 
         onDismiss={() => setShowNotification(false)} 
