@@ -53,6 +53,44 @@ export interface PreparedPromptResponse {
     jsonPrompt: string;
 }
 
+
+export interface TokenCountResponse {
+  token_count: number;
+}
+
+export interface TotalTokenCountRequest {
+  agent_id: string;
+  user_prompt: string;
+  codebase_paths: string[];
+  project_root: string;
+}
+
+export const fetchTotalTokenCount = async (payload: TotalTokenCountRequest, signal: AbortSignal): Promise<number> => {
+    try {
+        const response = await fetch(`${API_URL}/api/v2/tokenizer/count`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal,
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to fetch total token count: ${response.statusText}`);
+            return 0;
+        }
+
+        const data: TokenCountResponse = await response.json();
+        return data.token_count || 0;
+    } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error("Error fetching total token count:", error);
+        }
+        return 0;
+    }
+};
+
 export const fetchDirectoryTree = async (path: string): Promise<TreeNodeData[]> => {
     try {
         const response = await fetch(`${API_URL}/api/v2/fs/directory/load`, {

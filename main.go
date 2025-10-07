@@ -6,12 +6,14 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/ClarionDev/clarion/internal/api"
 	"github.com/ClarionDev/clarion/internal/database"
 	"github.com/ClarionDev/clarion/internal/llm"
 	"github.com/ClarionDev/clarion/internal/storage"
+	"github.com/ClarionDev/clarion/internal/tokencounter"
 	"github.com/joho/godotenv"
 )
 
@@ -20,7 +22,10 @@ func main() {
 		log.Println("No .env file found, using default or environment-set variables.")
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	llm.RegisterProviders()
+	tokencounter.SetupProviders(context.Background(), logger)
 
 	ctx := context.Background()
 	db, err := database.New(ctx, "sqlite", "clarion.db")

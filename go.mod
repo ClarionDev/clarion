@@ -10,11 +10,13 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/joho/godotenv v1.5.1
+	github.com/pkoukk/tiktoken-go v0.1.8
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.30.1
 )
 
 require (
+	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

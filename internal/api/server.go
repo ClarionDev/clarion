@@ -98,6 +98,7 @@ func (s *Server) setupRoutes() {
 			r.Get("/{projectID}/runs", s.handleListRuns)
 		})
 		r.Post("/runs/save", s.handleSaveRun)
+		r.Post("/tokenizer/count", s.handleTokenCount)
 	})
 }
 

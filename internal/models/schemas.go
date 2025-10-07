@@ -5,6 +5,13 @@ import (
 	"github.com/ClarionDev/clarion/internal/message"
 )
 
+const (
+	ProviderGoogle    = "Google Gemini"
+	ProviderOpenAI    = "OpenAI"
+	ProviderAnthropic = "Anthropic"
+	ProviderOpenRouter = "OpenRouter"
+)
+
 type LLMConfig struct {
 	Provider   string         `json:"provider" yaml:"provider"`
 	Model      string         `json:"model" yaml:"model"`

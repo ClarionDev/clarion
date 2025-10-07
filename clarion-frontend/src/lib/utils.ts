@@ -15,3 +15,13 @@ export function countTokens(text: string): number {
   const tokens = text.match(/\S+/g) || [];
   return tokens.length;
 }
+
+export const formatTokenCount = (count: number): string => {
+    if (count < 1000) {
+        return count.toString();
+    }
+    if (count < 1_000_000) {
+        return `${(count / 1000).toFixed(1)}K`;
+    }
+    return `${(count / 1_000_000).toFixed(1)}M`;
+};

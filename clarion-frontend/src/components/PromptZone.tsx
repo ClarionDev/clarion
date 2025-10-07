@@ -3,12 +3,15 @@ import { useAppStore } from '../store/store';
 import Button from './ui/Button';
 import Textarea from './ui/Textarea';
 import { Sparkles, Files } from 'lucide-react';
-import { runAgent as runAgentApi, AgentOutput as ApiAgentOutput } from '../lib/api';
+import { runAgent as runAgentApi, AgentOutput as ApiAgentOutput, fetchTotalTokenCount } from '../lib/api';
 import { useDebounce } from '../hooks/useDebounce';
+import { formatTokenCount } from '../lib/utils';
 
 const PromptZone = () => {
   const [localPrompt, setLocalPrompt] = useState('');
   const debouncedPrompt = useDebounce(localPrompt, 300);
+  const [tokenCount, setTokenCount] = useState(0);
+  const [isCounting, setIsCounting] = useState(false);
 
   const {
     setPrompt,
@@ -32,12 +35,44 @@ const PromptZone = () => {
     setActiveModalSection: state.setActiveModalSection,
   }));
 
+  const useAgentFilters = activeAgent && (activeAgent.codebaseFilters?.includeGlobs?.length > 0 || activeAgent.codebaseFilters?.excludeGlobs?.length > 0);
+  const finalContextPaths = useAgentFilters ? agentFilteredFilePaths : contextFilePaths;
+
   useEffect(() => {
     setPrompt(debouncedPrompt);
   }, [debouncedPrompt, setPrompt]);
 
-  const useAgentFilters = activeAgent && (activeAgent.codebaseFilters?.includeGlobs?.length > 0 || activeAgent.codebaseFilters?.excludeGlobs?.length > 0);
-  const finalContextPaths = useAgentFilters ? agentFilteredFilePaths : contextFilePaths;
+  useEffect(() => {
+    if (!activeAgent || !currentProject) {
+      setTokenCount(0);
+      return;
+    }
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const count = async () => {
+      setIsCounting(true);
+      const payload = {
+        agent_id: activeAgent.id,
+        user_prompt: debouncedPrompt,
+        codebase_paths: Array.from(finalContextPaths),
+        project_root: currentProject.path,
+      };
+      const result = await fetchTotalTokenCount(payload, signal);
+      if (!signal.aborted) {
+        setTokenCount(result);
+        setIsCounting(false);
+      }
+    };
+
+    count();
+
+    return () => {
+      controller.abort();
+    };
+  }, [debouncedPrompt, activeAgent, finalContextPaths, currentProject]);
+
 
   const handleRunAgent = async () => {
     if (!activeAgent || !currentProject || !localPrompt) return;
@@ -87,7 +122,7 @@ const PromptZone = () => {
 
   return (
     <div className="p-4 border-t border-gray-light flex-shrink-0 flex flex-col gap-3">
-      <div className='flex justify-end items-center text-xs text-text-secondary'>
+      <div className='flex justify-end items-center text-xs text-text-secondary gap-4'>
         <button 
           onClick={() => setActiveModalSection('codebase')} 
           className='flex items-center gap-2 hover:text-text-primary'
@@ -95,6 +130,11 @@ const PromptZone = () => {
           <Files size={14} />
           <span>{finalContextPaths.size} files in context</span>
         </button>
+        {(tokenCount > 0) && (
+            <span className='text-text-secondary'>
+                ({isCounting ? '...' : `${formatTokenCount(tokenCount)} tokens`})
+            </span>
+        )}
       </div>
       <div className="flex items-end gap-2">
         <Textarea 

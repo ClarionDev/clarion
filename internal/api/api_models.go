@@ -79,3 +79,14 @@ type WriteFileRequest struct {
 	Path     string `json:"path"`
 	Content  string `json:"content"`
 }
+
+type TokenCountRequest struct {
+	AgentID       string   `json:"agent_id"`
+	UserPrompt    string   `json:"user_prompt"`
+	CodebasePaths []string `json:"codebase_paths"`
+	ProjectRoot   string   `json:"project_root"`
+}
+
+type TokenCountResponse struct {
+	TokenCount int `json:"token_count"`
+}
