@@ -134,13 +134,27 @@ Ensure you have the following installed on your system:
 
 To start both the backend server and the frontend development server:
 
+
+1. **Running the tauri desktop application :**
+
 ```bash
-make dev
+cd clarion-frontend
 ```
+
+```bash
+npm run tauri dev
+```
+
+2. **Running the GO backend:**
+```bash
+go run main.go
+```
+
+
 
 This command will:
 
-1.  Compile and run the Go backend server (listening on the port specified in `.env`, e.g., `http://localhost:2077`).
+1.  Compile and run the Go backend server (listening on the port specified in `.env`, e.g.).
 2.  Start the React development server in a Tauri window, providing the desktop application UI.
 
 The application should automatically open in a new window.
